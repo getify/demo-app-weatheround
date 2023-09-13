@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="/favicon.ico" />
+
+<script integrity="sha256-CoCYJ/tTxH9vJyISOUlowiGKF8OokDL5QBuS3H8R1/g=">
+// compute the vw/vh units more reliably than CSS does itself
+if (document.documentElement && document.documentElement.style && document.documentElement.style.setProperty) {
+  let docEl = document.documentElement;
+  let width = Math.max(300,docEl.clientWidth);
+  let height = Math.max(300,docEl.clientHeight);
+  docEl.style.setProperty("--vw-unit",`${(width / 100).toFixed(1)}px`);
+  docEl.style.setProperty("--vh-unit",`${(height / 100).toFixed(1)}px`);
+}
+</script>
+</head>
+
+<body>
+  <!-- Please keep this div empty -->
+  <div id="redwood-app"></div>
+</body>
+
+<script type="module" src="/js/window-resize.js"></script>
+
+
+</html>
