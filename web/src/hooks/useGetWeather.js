@@ -467,11 +467,13 @@ async function processWeather(loc, json, signal) {
           json.hourly.temperature_2m[i],
           json.hourly_units.temperature_2m
         ),
+        tempUnit: json.hourly_units.temperature_2m,
         wind: formatWind(
           json.hourly.windspeed_10m[i],
           json.hourly.winddirection_10m[i],
           json.hourly_units.windspeed_10m
         ),
+        windUnit: json.hourly_units.windspeed_10m,
         precipitation: (
           `${json.hourly.precipitation_probability[i]}%`
         ),

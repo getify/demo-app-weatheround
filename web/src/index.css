@@ -186,42 +186,55 @@ i.icon.weather.wi-night-hail::before {
 
 i.icon.weather.wi-day-sunny::before {
   background-image: url(/images/weather-icons/wi-day-sunny.svg);
+  filter: var(--color-image-filter-yellow-1);
 }
 i.icon.weather.wi-day-sunny-overcast::before {
   background-image: url(/images/weather-icons/wi-day-sunny-overcast.svg);
+  filter: var(--color-image-filter-yellow-1);
 }
 i.icon.weather.wi-day-cloudy::before {
   background-image: url(/images/weather-icons/wi-day-cloudy.svg);
+  filter: var(--color-image-filter-yellow-1);
 }
 i.icon.weather.wi-day-cloudy-high::before {
   background-image: url(/images/weather-icons/wi-day-cloudy-high.svg);
+  filter: var(--color-image-filter-yellow-1);
 }
 i.icon.weather.wi-day-fog::before {
   background-image: url(/images/weather-icons/wi-day-fog.svg);
+  filter: var(--color-image-filter-yellow-1);
 }
 i.icon.weather.wi-day-sprinkle::before {
   background-image: url(/images/weather-icons/wi-day-sprinkle.svg);
+  filter: var(--color-image-filter-yellow-1);
 }
 i.icon.weather.wi-day-sleet::before {
   background-image: url(/images/weather-icons/wi-day-sleet.svg);
+  filter: var(--color-image-filter-yellow-1);
 }
 i.icon.weather.wi-day-rain::before {
   background-image: url(/images/weather-icons/wi-day-rain.svg);
+  filter: var(--color-image-filter-yellow-1);
 }
 i.icon.weather.wi-day-rain-mix::before {
   background-image: url(/images/weather-icons/wi-day-rain-mix.svg);
+  filter: var(--color-image-filter-yellow-1);
 }
 i.icon.weather.wi-day-snow::before {
   background-image: url(/images/weather-icons/wi-day-snow.svg);
+  filter: var(--color-image-filter-yellow-1);
 }
 i.icon.weather.wi-day-showers::before {
   background-image: url(/images/weather-icons/wi-day-showers.svg);
+  filter: var(--color-image-filter-yellow-1);
 }
 i.icon.weather.wi-day-thunderstorm::before {
   background-image: url(/images/weather-icons/wi-day-thunderstorm.svg);
+  filter: var(--color-image-filter-yellow-1);
 }
 i.icon.weather.wi-day-hail::before {
   background-image: url(/images/weather-icons/wi-day-hail.svg);
+  filter: var(--color-image-filter-yellow-1);
 }
 
 button.icon-btn {
@@ -264,7 +277,7 @@ button.icon-btn.cancel::before {
   filter: var(--color-image-filter-pink-1);
 }
 button.icon-btn.weather-units::before {
-  background-image: url(/images/weather-units.svg);
+  background-image: url(/images/cog.svg);
   filter: var(--color-image-filter-yellow-1);
 }
 button.icon-btn.pin-location::before {
@@ -326,6 +339,9 @@ button.icon-text-btn::before {
 button.icon-text-btn.hourly-forecast::before {
   background-image: url(/images/hourly-forecast.svg);
 }
+button.icon-text-btn.back::before {
+  background-image: url(/images/arrow-circle-left.svg);
+}
 
 .toggleControl {
   --thumb-size: calc(var(--base-font-size) * 1.1);
@@ -359,6 +375,8 @@ button.icon-text-btn.hourly-forecast::before {
   line-height: var(--thumb-size);
   font-weight: bold;
   cursor: pointer;
+  white-space: nowrap;
+  min-width: calc(var(--base-font-size) * 8);
 }
 .toggleControl label:has(input[type=radio]:focus-visible) {
   box-shadow: 0px 0px 6px 2px rgba(var(--color-yellow-1),0.8);
@@ -366,6 +384,7 @@ button.icon-text-btn.hourly-forecast::before {
 .toggleControl label:first-of-type {
   padding-left: calc(var(--vw-unit) * 2);
   padding-right: var(--label-padding);
+  text-align: right;
 }
 /* left-side of gutter */
 .toggleControl label:first-of-type::before {
@@ -394,6 +413,7 @@ button.icon-text-btn.hourly-forecast::before {
 .toggleControl label:last-of-type {
   padding-left: var(--label-padding);
   padding-right: calc(var(--vw-unit) * 2);
+  text-align: left;
 }
 /* right-side of gutter */
 .toggleControl label:last-of-type::before {
@@ -420,6 +440,61 @@ button.icon-text-btn.hourly-forecast::before {
   background-color: yellow;
 }
 
+
+
+
+
+#select-hourly-chart {
+  margin-bottom: calc(var(--vh-unit) * 2);
+}
+.multiToggleControl {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap:
+    calc(var(--vh-unit) * 1.5)
+    calc(var(--vw-unit) * 2.5);
+}
+.multiToggleControl input[type=radio] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: calc(var(--hidden-text-size));
+  width: var(--hidden-text-size);
+  height: var(--hidden-text-size);
+  opacity: 0;
+  transform: scale(0.1);
+}
+.multiToggleControl label {
+  display: block;
+  position: relative;
+  font-size: calc(var(--base-font-size) * 0.8);
+  color: rgba(var(--color-white));
+  border: thin solid rgba(var(--color-white));
+  font-weight: bold;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: calc(var(--vw-unit) * 2.5);
+  padding:
+    calc(var(--vh-unit) * 1.5)
+    calc(var(--vw-unit) * 2.5);
+}
+.multiToggleControl label:has(input[type=radio]:focus-visible) {
+  box-shadow: 0px 0px 6px 2px rgba(var(--color-yellow-1),0.8);
+}
+.multiToggleControl label:has(input[type=radio]:checked) {
+  background-color: rgba(var(--color-yellow-1));
+  color: rgba(var(--color-gray-green-1));
+  border-color: rgba(var(--color-yellow-1));
+}
+
+
+
+
+
+
+
+
 .hidden {
   display: none !important;
 }
@@ -430,6 +505,10 @@ button.icon-text-btn.hourly-forecast::before {
 
 .justify-full {
   text-align: justify;
+}
+
+.yellow-image-filter {
+  filter: var(--color-image-filter-yellow-1);
 }
 
 #page {
@@ -513,7 +592,7 @@ footer {
   align-items: center;
   padding:
     calc(var(--vh-unit) * 2.5)
-    calc(var(--vw-unit) * 2);
+    calc(var(--vw-unit) * 1);
   border: thin solid rgba(var(--color-white));
   border-radius:
     0
@@ -625,6 +704,9 @@ footer {
     calc(var(--vw-unit) * 3);
   border-radius: calc(var(--vw-unit) * 2);
   position: relative;
+}
+#current-weather.night {
+  border-color: rgba(var(--color-blue-1));
 }
 #current-weather .weather-date {
   position: absolute;

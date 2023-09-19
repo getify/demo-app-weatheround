@@ -26,7 +26,6 @@ function getDOWStr(timestamp, timezone) {
 }
 
 function formatDateTimeLocale(timestamp, timezone) {
-  const time = timestamp.toLocaleTimeString(navigator.language, { hour: 'numeric', minute: 'numeric', timeZone: timezone, timeZoneName: 'short' })
   return {
     ...formatDateLocale(timestamp, timezone),
     ...formatTimeLocale(timestamp, timezone),
@@ -35,13 +34,14 @@ function formatDateTimeLocale(timestamp, timezone) {
 }
 
 function formatTimeLocale(timestamp, timezone) {
-  let time = timestamp.toLocaleTimeString(navigator.language, { hour: 'numeric', minute: 'numeric', timeZone: timezone, timeZoneName: 'short' })
-  if (timezone != localTimezoneName) {
-    const localTime = timestamp.toLocaleTimeString(navigator.language, { hour: 'numeric', minute: 'numeric', timeZone: localTimezoneName, timeZoneName: 'short' })
-    time = `${time} (${localTime})`
-  }
+  const localTime = timestamp.toLocaleTimeString(navigator.language, { hour: 'numeric', minute: 'numeric', timeZone: localTimezoneName, timeZoneName: 'short' })
+  const remoteTime = timestamp.toLocaleTimeString(navigator.language, { hour: 'numeric', minute: 'numeric', timeZone: timezone, timeZoneName: 'short' })
+
   return {
-    time,
+    time: {
+      local: localTime,
+      remote: remoteTime
+    },
     timestamp: timestamp.getTime()
   }
 }
@@ -57,26 +57,17 @@ function formatDateLocale(timestamp, timezone) {
     }
   )
 
-  try {
-    var dateStr = timestamp.toLocaleDateString(
-      'en-US',
-      {
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-        timeZone: timezone
-      }
-    )
+  const dateStr = timestamp.toLocaleDateString(
+    'en-US',
+    {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      timeZone: timezone
+    }
+  )
+  const isoDate = toLocaleISODateStr(dateStr)
 
-    var isoDate = toLocaleISODateStr(dateStr)
-  }
-  catch (err) {
-    console.log('language',navigator.language)
-    console.log('timestamp',timestamp)
-    console.log('timezone',timezone)
-    console.log('dateStr',dateStr)
-    console.log(err)
-  }
   return {
     day,
     date,

@@ -33,13 +33,7 @@ function CurrentLocation({
   const savedLocationsListRef = useRef()
   const toggleSavedLocationsBtnRef = useRef()
 
-  let savedLocationsShown = !(
-    savedLocationsListRef.current?.matches('.hidden')
-  )
-
-  if (found && savedLocationsShown) {
-    doHideSavedLocations()
-  }
+  let savedLocationsShown = false
 
   // useEffect(() => { console.log('render') })
 
@@ -90,14 +84,7 @@ function CurrentLocation({
           <>
             {
               loc.saved ?
-                (
-                  <i
-                    className="icon location-pinned"
-                    title="location pinned"
-                  >
-                    location pinned
-                  </i>
-                ) :
+                null :
 
                 (
                   <button

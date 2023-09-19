@@ -35,7 +35,7 @@ function AboutPage() {
         This app demonstrates using <a href="https://redwoodjs.com" target="_blank">RedwoodJS</a>
         {' '}to build a static "serverless" web application, and then packaging
         it as a native-hybrid app -- for all platforms and app stores! --
-        via <a href="https://github.com/socketsupply/socket">Socket
+        via <a href="https://github.com/socketsupply/socket" target="_blank">Socket
         Supply's runtime + tooling</a>.
       </p>
 

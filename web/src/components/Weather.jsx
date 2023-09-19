@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   useGetWeather,
   setDefaultWeatherUnits,
@@ -20,13 +20,25 @@ function Weather({
   locFound,
   activateWeather,
   cancelWeather,
-  canceled = false
+  canceled = false,
+  selectedTimeMode,
+  updateTimeMode
 }) {
   // note: `let`s here are intentional
   let [ temperatureUnit, setTemperatureUnit ] = useState(null)
   let [ speedUnit, setSpeedUnit ] = useState(null)
+  let [ forecastDate, setForecastDate ] = useState(null)
 
-  const [ forecastDate, setForecastDate ] = useState(null)
+  const locState = useRef(loc)
+
+  // location has changed?
+  if (loc !== locState.current) {
+    locState.current = loc
+
+    // reset forecast date (close hourly view)
+    setForecastDate(forecastDate = null)
+  }
+
   const [ weatherToken, updateWeatherToken ] =
     useState(Math.random())
   const [ weather ] = useGetWeather({
@@ -63,6 +75,7 @@ function Weather({
       <WeatherUnitsControl
         temperatureUnit={temperatureUnit}
         speedUnit={speedUnit}
+        selectedTimeMode={selectedTimeMode}
         toggleUnit={doToggleUnit}
       />
 
@@ -113,6 +126,7 @@ function Weather({
                             lastUpdate={weather.lastUpdate}
                             hourlyForecast={weather.hourly}
                             setForecastDate={setForecastDate}
+                            selectedTimeMode={selectedTimeMode}
                           />
                         ) :
 
@@ -122,11 +136,13 @@ function Weather({
                               currentWeather={weather.current}
                               setForecastDate={setForecastDate}
                               lastUpdate={weather.lastUpdate}
+                              selectedTimeMode={selectedTimeMode}
                             />
 
                             <WeatherForecast
                               futureWeather={weather.future}
                               setForecastDate={setForecastDate}
+                              selectedTimeMode={selectedTimeMode}
                             />
                           </>
                         )
@@ -178,6 +194,10 @@ function Weather({
         /*override=*/true
       )
       setSpeedUnit(evt.target.value)
+    }
+    else if (evt.target.matches('[name=pickTimeMode]')) {
+      activateWeather()
+      updateTimeMode(evt.target.value)
     }
   }
 

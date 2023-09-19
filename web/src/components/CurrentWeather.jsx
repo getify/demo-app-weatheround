@@ -22,10 +22,14 @@ function CurrentWeather({
     sunrise,
     sunset
   },
-  setForecastDate
+  setForecastDate,
+  selectedTimeMode
 }) {
   return (
-    <div id="current-weather">
+    <div
+      id="current-weather"
+      className={dayTime ? 'day' : 'night'}
+    >
       <div className="weather-date">
         Today {lastUpdate.date}
       </div>
@@ -34,7 +38,7 @@ function CurrentWeather({
         id="last-update"
         title="Last Updated"
       >
-        {lastUpdate.time}
+        {lastUpdate.time[selectedTimeMode]}
       </div>
 
       <div className="temperature">
@@ -97,14 +101,14 @@ function CurrentWeather({
           title="Daily Sunrise"
         >
           <i className="icon weather wi-sunrise" />
-          {sunrise.time}
+          {sunrise.time[selectedTimeMode]}
         </div>
         <div
           className="sunset"
           title="Daily Sunset"
         >
           <i className="icon weather wi-sunset" />
-          {sunset.time}
+          {sunset.time[selectedTimeMode]}
         </div>
       </div>
       <button

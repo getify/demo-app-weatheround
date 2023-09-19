@@ -11,6 +11,7 @@ export default WeatherUnitsControl
 function WeatherUnitsControl({
   temperatureUnit,
   speedUnit,
+  selectedTimeMode,
   toggleUnit
 }) {
 
@@ -86,6 +87,33 @@ function WeatherUnitsControl({
                   label: 'km/h',
                   value: 'kmh',
                   description: 'km/h'
+                }}
+              />
+            ) :
+
+            null
+        }
+
+        {
+          !!selectedTimeMode ?
+            (
+              <ToggleControl
+                name="pickTimeMode"
+                currentValue={selectedTimeMode}
+                elementKey="timeModeSelector"
+                description="Select which type of timezone to display"
+                onChangeCapture={doToggleUnit}
+                option1={{
+                  title: 'Select local time',
+                  label: 'local time',
+                  value: 'local',
+                  description: 'Use local device timezone'
+                }}
+                option2={{
+                  title: 'Select remote time',
+                  label: 'remote time',
+                  value: 'remote',
+                  description: 'Use remote location timezone'
                 }}
               />
             ) :

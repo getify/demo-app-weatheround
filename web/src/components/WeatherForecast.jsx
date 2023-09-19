@@ -9,7 +9,8 @@ export default WeatherForecast
 
 function WeatherForecast({
   futureWeather,
-  setForecastDate
+  setForecastDate,
+  selectedTimeMode
 }) {
   const forecastDays = [];
   for (let forecast of futureWeather) {
@@ -18,6 +19,7 @@ function WeatherForecast({
         forecast={forecast}
         setForecastDate={setForecastDate}
         key={forecast.date.timestamp}
+        selectedTimeMode={selectedTimeMode}
       />
     )
   }
@@ -39,7 +41,8 @@ function WeatherForecastDay({
     sunrise,
     sunset
   },
-  setForecastDate
+  setForecastDate,
+  selectedTimeMode
 }) {
   return (
     <div className="forecast-day">
@@ -95,14 +98,14 @@ function WeatherForecastDay({
           title="Daily Sunrise"
         >
           <i className="icon weather wi-sunrise" />
-          {sunrise.time}
+          {sunrise.time[selectedTimeMode]}
         </div>
         <div
           className="sunset"
           title="Daily Sunset"
         >
           <i className="icon weather wi-sunset" />
-          {sunset.time}
+          {sunset.time[selectedTimeMode]}
         </div>
       </div>
       <button
