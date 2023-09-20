@@ -115,9 +115,6 @@ i.icon::before {
   background-repeat: no-repeat;
   filter: var(--color-image-filter-white);
 }
-i.icon.location-pinned::before {
-  background-image: url(/images/location-pinned.svg);
-}
 i.icon.wait::before {
   background-image: url(/images/hourglass.svg);
 }
