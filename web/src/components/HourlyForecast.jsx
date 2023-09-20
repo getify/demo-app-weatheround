@@ -331,7 +331,6 @@ function HourlyForecast({
                 datalabels: {
                   display: true,
                   anchor: 'end',
-                  align: 'left',
                   align(context) {
                     return (
                       context.dataset.data[context.dataIndex] > 1 ?
