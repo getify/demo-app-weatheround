@@ -38,7 +38,10 @@ function AboutPage() {
         via <a href="https://github.com/socketsupply/socket" target="_blank">Socket
         Supply's runtime + tooling</a>.
       </p>
-
+      <p>
+        The source code for this app <a href="https://github.com/socketsupply/demo-app-weatheround" target="_blank">can
+        be found on Github</a>.
+      </p>
     </>
   )
 }

@@ -35,6 +35,15 @@ function SiteLayout({ children }) {
           {' '}|{' '}
 
           <Link to={routes.about()}>About</Link>
+
+          {' '}|{' '}
+
+          <a
+            href="https://github.com/socketsupply/demo-app-weatheround"
+            target="_blank"
+          >
+            Source (Github)
+          </a>
         </footer>
       </div>
     </>
