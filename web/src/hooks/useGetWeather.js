@@ -18,6 +18,7 @@ import {
   getLocationStatus
 } from 'src/hooks/useGetLocation.js'
 import JSONStore from 'src/lib/json-store.js'
+// import JSONStore from '@socketsupply/json-store'
 
 
 // https://open-meteo.com/en/docs#weathervariables
@@ -170,7 +171,7 @@ const weatherConditions = {
 //
 // temperature: 'fahrenheit' or 'celsius'
 // speed: 'mph' or 'kmh'
-let { temperatureUnit, speedUnit } = getSavedDefaultWeatherUnits()
+let { temperatureUnit, speedUnit } = await getSavedDefaultWeatherUnits()
 
 
 export {
@@ -535,14 +536,14 @@ function formatWind(speed, direction, unit) {
   return `${Math.round(speed)}${unit} ${dir}`
 }
 
-function setDefaultWeatherUnits(temperature, speed, override = false) {
+async function setDefaultWeatherUnits(temperature, speed, override = false) {
   if (temperatureUnit == null || override) {
     temperatureUnit = temperature
   }
   if (speedUnit == null || override) {
     speedUnit = speed
   }
-  storeSavedDefaultWeatherUnits()
+  return storeSavedDefaultWeatherUnits()
 }
 
 function getWeatherStatus(weather) {
@@ -551,17 +552,17 @@ function getWeatherStatus(weather) {
   return { pending, found }
 }
 
-function getSavedDefaultWeatherUnits() {
-  const units = JSONStore.getItem('default-weather-units')
+async function getSavedDefaultWeatherUnits() {
+  const units = await JSONStore.getItem('default-weather-units')
   return units || {
     temperatureUnit: null,
     speedUnit: null
   }
 }
 
-function storeSavedDefaultWeatherUnits() {
+async function storeSavedDefaultWeatherUnits() {
   if (temperatureUnit != null || speedUnit != null) {
-    JSONStore.setItem('default-weather-units', {
+    return JSONStore.setItem('default-weather-units', {
       temperatureUnit,
       speedUnit
     })

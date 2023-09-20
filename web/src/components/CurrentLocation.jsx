@@ -25,7 +25,7 @@ function CurrentLocation({
   canceled = false
 }) {
   const { pending, found } = getLocationStatus(loc)
-  const [ savedLocs, updateSavedLocs ] = useState(getSavedLocations)
+  const [ savedLocs, updateSavedLocs ] = useState({})
   const formattedLoc = (
     found ? formatLocation(loc) : ''
   )
@@ -33,7 +33,15 @@ function CurrentLocation({
   const savedLocationsListRef = useRef()
   const toggleSavedLocationsBtnRef = useRef()
 
+  // note: `let` here is intentional
   let savedLocationsShown = false
+
+  // only run this effect the first time!
+  useEffect(() => {
+    getSavedLocations()
+    .then(updateSavedLocs)
+    .catch(() => {})
+  }, [])
 
   // useEffect(() => { console.log('render') })
 
@@ -184,9 +192,9 @@ function CurrentLocation({
     }
   }
 
-  function doSaveLocation() {
-    saveLocation(loc)
-    updateSavedLocs({ ...getSavedLocations() })
+  async function doSaveLocation() {
+    await saveLocation(loc)
+    updateSavedLocs({ ...(await getSavedLocations()) })
   }
 
   function doToggleSavedLocations() {
@@ -215,11 +223,11 @@ function CurrentLocation({
     doHideSavedLocations()
   }
 
-  function doRemoveSavedLocation(locToRemove) {
-    discardSavedLocation(locToRemove)
+  async function doRemoveSavedLocation(locToRemove) {
+    await discardSavedLocation(locToRemove)
 
     // keep saved-locations shown?
-    const locs = { ...getSavedLocations() }
+    const locs = { ...(await getSavedLocations()) }
     updateSavedLocs(locs)
 
     // need to hide the saved-locations list?

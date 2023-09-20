@@ -10,6 +10,14 @@ import redwood from '@redwoodjs/vite'
 
 const viteConfig = {
   plugins: [redwood()],
+  build: {
+    rollupOptions: {
+      external: [
+        /^socket:.*/
+      ]
+    },
+    target: 'es2022'
+  }
 }
 
 export default defineConfig(viteConfig)

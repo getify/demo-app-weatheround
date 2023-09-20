@@ -176,10 +176,10 @@ function Weather({
 
   // *******************
 
-  function doToggleUnit(evt) {
+  async function doToggleUnit(evt) {
     if (evt.target.matches('[name=pickTemperatureUnit]')) {
       activateWeather()
-      setDefaultWeatherUnits(
+      await setDefaultWeatherUnits(
         evt.target.value,
         speedUnit,
         /*override=*/true
@@ -188,7 +188,7 @@ function Weather({
     }
     else if (evt.target.matches('[name=pickSpeedUnit]')) {
       activateWeather()
-      setDefaultWeatherUnits(
+      await setDefaultWeatherUnits(
         temperatureUnit,
         evt.target.value,
         /*override=*/true

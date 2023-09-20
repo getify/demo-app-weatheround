@@ -5,9 +5,10 @@ import Search from 'src/components/Search.jsx'
 import CurrentLocation from 'src/components/CurrentLocation.jsx'
 import Weather from 'src/components/Weather.jsx'
 import JSONStore from 'src/lib/json-store.js'
+// import JSONStore from '@socketsupply/json-store'
 
 
-let timeMode = getSavedTimeMode()
+let timeMode = await getSavedTimeMode()
 
 
 export default HomePage
@@ -142,13 +143,13 @@ function HomePage() {
   }
 }
 
-function getSavedTimeMode() {
-  const timeMode = JSONStore.getItem('default-time-mode')
+async function getSavedTimeMode() {
+  const timeMode = await JSONStore.getItem('default-time-mode')
   return timeMode || 'remote'
 }
 
-function storeSavedTimeMode(newTimeMode) {
+async function storeSavedTimeMode(newTimeMode) {
   if (newTimeMode != null) {
-    JSONStore.setItem('default-time-mode', timeMode = newTimeMode)
+    await JSONStore.setItem('default-time-mode', timeMode = newTimeMode)
   }
 }

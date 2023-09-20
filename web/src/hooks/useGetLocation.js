@@ -10,6 +10,7 @@ import {
   getSavedDefaultWeatherUnits
 } from 'src/hooks/useGetWeather.js'
 import JSONStore from 'src/lib/json-store.js'
+// import JSONStore from '@socketsupply/json-store'
 
 
 const localLanguage = (navigator.language || 'en-US').match(/^(?<lang>.+)(?:-.+)$/)?.groups?.lang
@@ -349,7 +350,7 @@ async function processLocation(resp, signal) {
     localTimezoneName
   )
 
-  const loc = prepareLocation({
+  const loc = await prepareLocation({
     lat: json.latitude,
     lng: json.longitude,
     postcode: json.postcode,
@@ -359,7 +360,7 @@ async function processLocation(resp, signal) {
     timezoneName,
   })
 
-  setDefaultWeatherUnits(
+  await setDefaultWeatherUnits(
     loc.temperatureUnit,
     loc.speedUnit,
     /*override=*/false
@@ -368,11 +369,11 @@ async function processLocation(resp, signal) {
   return loc
 }
 
-function prepareLocation(loc) {
+async function prepareLocation(loc) {
   const {
     temperatureUnit: defaultTemperatureUnit,
     speedUnit: defaultSpeedUnit
-  } = getSavedDefaultWeatherUnits()
+  } = await getSavedDefaultWeatherUnits()
 
   // default temperature unit
   const temperatureUnit = (
@@ -397,7 +398,7 @@ function prepareLocation(loc) {
   return {
     temperatureUnit,
     speedUnit,
-    saved: isLocationSaved(loc),
+    saved: (await isLocationSaved(loc)),
     ...loc
   }
 }
@@ -419,17 +420,17 @@ function getLocationStatus(loc) {
   return { pending, found }
 }
 
-function isLocationSaved(loc) {
-  const savedLocations = getSavedLocations()
+async function isLocationSaved(loc) {
+  const savedLocations = await getSavedLocations()
   return (
     savedLocations[locationKey(loc)] != null
   )
 }
 
-function saveLocation(loc) {
+async function saveLocation(loc) {
   loc.saved = true
 
-  const savedLocations = getSavedLocations()
+  const savedLocations = await getSavedLocations()
   savedLocations[locationKey(loc)] = {
     saved: true,
     lat: loc.lat,
@@ -440,23 +441,23 @@ function saveLocation(loc) {
     country: loc.country,
     timezoneName: loc.timezoneName
   }
-  storeSavedLocations(savedLocations)
+  return storeSavedLocations(savedLocations)
 }
 
-function discardSavedLocation(loc) {
+async function discardSavedLocation(loc) {
   loc.saved = false
 
-  const savedLocations = getSavedLocations()
+  const savedLocations = await getSavedLocations()
   delete savedLocations[locationKey(loc)]
-  storeSavedLocations(savedLocations)
+  return storeSavedLocations(savedLocations)
 }
 
-function getSavedLocations() {
-  return JSONStore.getItem('saved-locations') || {}
+async function getSavedLocations() {
+  return (await JSONStore.getItem('saved-locations')) || {}
 }
 
-function storeSavedLocations(savedLocations) {
-  JSONStore.setItem('saved-locations', savedLocations)
+async function storeSavedLocations(savedLocations) {
+  return JSONStore.setItem('saved-locations', savedLocations)
 }
 
 function locationKey(loc) {
