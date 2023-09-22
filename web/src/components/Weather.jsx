@@ -178,6 +178,7 @@ function Weather({
 
   async function doToggleUnit(evt) {
     if (evt.target.matches('[name=pickTemperatureUnit]')) {
+      setForecastDate()
       activateWeather()
       await setDefaultWeatherUnits(
         evt.target.value,
@@ -187,6 +188,7 @@ function Weather({
       setTemperatureUnit(evt.target.value)
     }
     else if (evt.target.matches('[name=pickSpeedUnit]')) {
+      setForecastDate()
       activateWeather()
       await setDefaultWeatherUnits(
         temperatureUnit,
@@ -196,6 +198,7 @@ function Weather({
       setSpeedUnit(evt.target.value)
     }
     else if (evt.target.matches('[name=pickTimeMode]')) {
+      setForecastDate()
       activateWeather()
       updateTimeMode(evt.target.value)
     }

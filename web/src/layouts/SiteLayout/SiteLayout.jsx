@@ -11,7 +11,7 @@ function SiteLayout({ children }) {
       <div id="page">
         <header>
           <h1>
-            <Link to={routes.home()} aria-label="WeatheRound"><i>W</i>eathe<i>r</i>ound</Link>
+            <a href="/" aria-label="WeatheRound"><i>W</i>eathe<i>r</i>ound</a>
           </h1>
         </header>
         <main>{children}</main>
@@ -25,7 +25,7 @@ function SiteLayout({ children }) {
 
           {' '}|{' '}
 
-          <Link to={routes.home()}>Weather</Link>
+          <a href="/">Weather</a>
 
           {' '}|{' '}
 
