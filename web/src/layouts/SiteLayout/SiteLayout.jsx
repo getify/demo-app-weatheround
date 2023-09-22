@@ -21,12 +21,7 @@ function SiteLayout({ children }) {
 
           &copy;2023
           {' '}
-          <a
-            href="https://socketsupply.co"
-            target="_blank"
-          >
-            Socket Supply Co.
-          </a>
+          Kyle Simpson
 
           {' '}|{' '}
 

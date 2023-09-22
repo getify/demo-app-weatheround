@@ -124,4 +124,4 @@ That will build and launch the app on my Android device!
 
 ## License
 
-All code and documentation are (c) 2023 Socket Supply Co and released under the MIT License. A copy of the MIT License [is also included](LICENSE.txt).
+All code and documentation are (c) 2023 Kyle Simpson and released under the MIT License. A copy of the MIT License [is also included](LICENSE.txt).
