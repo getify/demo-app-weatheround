@@ -391,7 +391,7 @@ async function prepareLocation(loc) {
     (
       mphCountries.includes(loc.country) ?
         'mph' :
-        'kph'
+        'kmh'
     )
   )
 
