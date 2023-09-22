@@ -1,5 +1,5 @@
 import { Link, routes } from '@redwoodjs/router'
-import { useState, useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { cancelEvt } from 'src/lib/util.js'
 
 
@@ -25,6 +25,11 @@ function CurrentWeather({
   setForecastDate,
   selectedTimeMode
 }) {
+  const lastUpdatePopupRef = useRef()
+
+  // note: `let` here is intentional
+  let lastUpdatePopupShown = false
+
   return (
     <div
       id="current-weather"
@@ -34,9 +39,23 @@ function CurrentWeather({
         Today {lastUpdate.date}
       </div>
 
+      <button
+        type="button"
+        className="icon-btn cloud-clock"
+        id="show-last-update-btn"
+        title="Show Last Update Time"
+        onClick={doToggleLastUpdated}
+        aria-controls="last-update-popup"
+      >
+        show last update time
+      </button>
+
       <div
-        id="last-update"
-        title="Last Updated"
+        id="last-update-popup"
+        className="hidden"
+        aria-expanded="false"
+        title="Time of last weather update"
+        ref={lastUpdatePopupRef}
       >
         {lastUpdate.time[selectedTimeMode]}
       </div>
@@ -120,4 +139,58 @@ function CurrentWeather({
       </button>
     </div>
   )
+
+
+  // *******************
+
+  function bindPopupEvents() {
+    document.addEventListener('click', eventOutsidePopup, true)
+    document.addEventListener('keydown', eventOutsidePopup, true)
+  }
+
+  function unbindPopupEvents() {
+    document.removeEventListener('click', eventOutsidePopup, true)
+    document.removeEventListener('keydown', eventOutsidePopup, true)
+  }
+
+  function eventOutsidePopup(evt) {
+    if (
+      // last-update popup visible?
+      lastUpdatePopupShown &&
+
+      (
+        (
+          evt.type === 'keydown' &&
+          evt.key === 'Escape'
+        ) ||
+
+        (
+          evt.type === 'click' &&
+
+          // event outside the saved-locations popup?
+          !evt.target.closest('#last-update-popup')
+        )
+      )
+    ) {
+      cancelEvt(evt)
+      doHideLastUpdatePopup()
+    }
+  }
+
+  function doToggleLastUpdated() {
+    if (lastUpdatePopupShown) {
+      doHideLastUpdatePopup()
+    }
+    else {
+      lastUpdatePopupRef.current?.classList.remove('hidden')
+      lastUpdatePopupShown = true
+      bindPopupEvents()
+    }
+  }
+
+  function doHideLastUpdatePopup() {
+    lastUpdatePopupRef.current?.classList.add('hidden')
+    lastUpdatePopupShown = false
+    unbindPopupEvents()
+  }
 }

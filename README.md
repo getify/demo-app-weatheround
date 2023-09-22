@@ -12,7 +12,7 @@ Here's a quick glimpse at some of the technology used in building this app.
 
 ### RedwoodJS
 
-This app is built with latest [RedwoodJS](https://redwoodjs.com) v6 (6.2.3 at time of writing).
+This app is built with latest [RedwoodJS](https://redwoodjs.com) v6 (6.3.1 at time of writing).
 
 Since it's "serverless", the app only uses the "web" *side* (not the GraphQL "api" *side*).
 
@@ -48,9 +48,9 @@ To run the app in your local dev environment:
 yarn rw dev web
 ```
 
-This will start the server instance on port `8910`, and open a browser instance for you at `http://localhost:8910`.
+This will start the dev server instance on `localhost` port `8910`, and open a browser instance for you there (`http://localhost:8910`).
 
-RedwoodJS handles a lot of hot-reloading magic for you, so you shouldn't really need to restart this server. You may need to refresh the browser on some types of changes, or recovering from errors, etc.
+RedwoodJS handles a lot of hot-reloading magic for you, so you shouldn't really need to restart this server much while making basic HTML/JS/CSS changes). You may need to refresh the browser on some types of changes though, or recovering from errors, etc.
 
 ### Deploying The Web App
 

@@ -298,6 +298,9 @@ button.icon-btn.search::before {
 button.icon-btn.refresh-weather::before {
   background-image: url(/images/refresh-weather.svg);
 }
+button.icon-btn.cloud-clock::before {
+  background-image: url(/images/cloud-clock.svg);
+}
 
 button.icon-text-btn {
   --btn-size: calc(var(--base-font-size) * 1.5);
@@ -714,14 +717,30 @@ footer {
   white-space: nowrap;
   cursor: default;
 }
-#current-weather #last-update {
+#current-weather #show-last-update-btn {
+  --btn-size: calc(var(--base-font-size) * 2);
+
   position: absolute;
   right: calc(var(--vw-unit) * 3);
   top: calc(var(--vh-unit) * 1.5);
+  z-index: 5;
+}
+#current-weather #last-update-popup {
+  position: absolute;
+  right: calc(var(--vw-unit) * 3);
+  top: calc(var(--vh-unit) * 1.5);
+  background-color: var(--bg-color);
+  z-index: 10;
   font-size: calc(var(--base-font-size) * 0.95);
   white-space: nowrap;
   cursor: help;
+  border: thin solid rgba(var(--color-white));
+  border-radius: calc(var(--vw-unit) * 2.5);
+  padding:
+    calc(var(--vh-unit) * 1.5)
+    calc(var(--vw-unit) * 2.5);
 }
+
 #current-weather .temperature {
   display: grid;
   grid-template-areas:
