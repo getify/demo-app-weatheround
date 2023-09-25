@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import {
   useGetWeather,
   setDefaultWeatherUnits,
@@ -67,8 +67,6 @@ function Weather({
     setTemperatureUnit(temperatureUnit = loc.temperatureUnit)
     setSpeedUnit(speedUnit = loc.speedUnit)
   }
-
-  // useEffect(() => { console.log('render') })
 
   return (
     <>

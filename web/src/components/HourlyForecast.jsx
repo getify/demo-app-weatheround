@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -10,9 +10,9 @@ import {
   Legend,
   LineController,
   BarController
-} from "chart.js";
+} from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels'
-import { Bar, Line } from "react-chartjs-2";
+import { Bar, Line } from 'react-chartjs-2';
 
 
 export default HourlyForecast

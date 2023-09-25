@@ -325,13 +325,6 @@ async function processWeather(loc, json, signal) {
     json.utc_offset_seconds
   )
 
-  // await Promise.race([
-  //   signalAbortPr(signal),
-
-  //   new Promise(res => setTimeout(res,3000))
-  // ])
-
-
   const current = (
     (json.current_weather && json.hourly == null) ?
       {

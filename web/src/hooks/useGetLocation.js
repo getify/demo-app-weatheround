@@ -336,12 +336,6 @@ async function processLocation(resp, signal) {
     .groups
   )
 
-  // await Promise.race([
-  //   signalAbortPr(signal),
-
-  //   new Promise(res => setTimeout(res,3000))
-  // ])
-
   const timezoneName = (
     (json.localityInfo?.informative?.find(entry => (
       entry.description == 'time zone'

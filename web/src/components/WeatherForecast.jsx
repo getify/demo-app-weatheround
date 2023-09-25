@@ -1,7 +1,3 @@
-import { Link, routes } from '@redwoodjs/router'
-import { useState, useEffect, useRef } from 'react'
-import { cancelEvt } from 'src/lib/util.js'
-
 export default WeatherForecast
 
 

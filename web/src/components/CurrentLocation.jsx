@@ -1,4 +1,3 @@
-import { Link, routes } from '@redwoodjs/router'
 import { useState, useEffect, useRef } from 'react'
 import { cancelEvt } from 'src/lib/util.js'
 import {
@@ -42,8 +41,6 @@ function CurrentLocation({
     .then(updateSavedLocs)
     .catch(() => {})
   }, [])
-
-  // useEffect(() => { console.log('render') })
 
   return (
     <div id="current-location">
