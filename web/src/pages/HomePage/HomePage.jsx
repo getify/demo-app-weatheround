@@ -17,7 +17,6 @@ export default HomePage
 // *******************
 
 function HomePage() {
-  const [ , forceRender ] = useState()
   const [ locState, updateLocState ] = useState({
     reset: false,
     canceled: false
@@ -36,8 +35,6 @@ function HomePage() {
   // hack: quietly (no re-render) reset location
   // state
   locState.reset = locState.canceled = false
-
-  // useEffect(() => { console.log('render') })
 
   return (
     <>
