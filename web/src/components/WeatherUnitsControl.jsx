@@ -105,13 +105,17 @@ function WeatherUnitsControl({
                 onChangeCapture={doToggleUnit}
                 option1={{
                   title: 'Select local time',
-                  label: 'local time',
+                  label: (
+                    <>
+                      <i className="icon clock" /> local
+                    </>
+                  ),
                   value: 'local',
                   description: 'Use local device timezone'
                 }}
                 option2={{
                   title: 'Select remote time',
-                  label: 'remote time',
+                  label: 'remote',
                   value: 'remote',
                   description: 'Use remote location timezone'
                 }}

@@ -21,7 +21,9 @@ function WeatherForecast({
   }
 
   return (
-    <div id="daily-forecast">{forecastDays}</div>
+    <div id="daily-forecast">
+      {forecastDays}
+    </div>
   )
 }
 

@@ -147,6 +147,9 @@ async function getSavedTimeMode() {
 
 async function storeSavedTimeMode(newTimeMode) {
   if (newTimeMode != null) {
-    await JSONStore.setItem('default-time-mode', timeMode = newTimeMode)
+    await JSONStore.setItem(
+      'default-time-mode',
+      timeMode = newTimeMode
+    )
   }
 }

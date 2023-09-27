@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import {
+  detectLocaleInfo,
   getAbortController,
   unwrapCancelable,
   getDeferred,
@@ -13,9 +14,6 @@ import JSONStore from 'src/lib/json-store.js'
 // import JSONStore from '@socketsupply/json-store'
 
 
-const localLanguage = (navigator.language || 'en-US').match(/^(?<lang>.+)(?:-.+)$/)?.groups?.lang
-const localTimezoneName = Intl.DateTimeFormat().resolvedOptions().timeZone
-
 // https://worldpopulace.com/countries-that-use-fahrenheit
 const fahrenheitCountries = [
   'US', 'BS', 'KY', 'LR', 'PW', 'FM', 'MH'
@@ -28,8 +26,15 @@ const mphCountries = [
   'SH', 'TC', 'GG', 'IM', 'JE', 'GU', 'MP', 'PR', 'VI'
 ]
 
+// initially detect user locale info (lang, timezone)
+let {
+  localLanguage,
+  localTimezoneName
+} = detectLocaleInfo()
+
 
 export {
+  updateLocaleInfo,
   localTimezoneName,
   fahrenheitCountries,
   mphCountries,
@@ -101,8 +106,10 @@ function useGetLocation({
       reqState.current.searchText = searchText
       reqState.current.onCancel = cancelLocationLookup
 
-      getLocation(searchText, controller.signal)
-      .pr.then(
+      unwrapCancelable(
+        getLocation(searchText, controller.signal)
+      )
+      .then(
         v => {
           resolveLocPr(v)
           updateLocSlot(v)
@@ -143,37 +150,41 @@ function useGetLocation({
 function getLocation(searchText, signal) {
   const controller = getAbortController(signal)
 
-  const pr = (async function getLocation(){
-    let loc
-    if (searchText != null && searchText != '') {
-      return unwrapCancelable(
-        searchLocation(searchText, signal)
-      )
-    }
-    else {
-      let position = null
-      try {
-        position = await unwrapCancelable(
-          getGeoPosition(controller.signal)
+  return {
+    pr: (async function getLocation(){
+      updateLocaleInfo()
+
+      let loc
+      if (searchText != null && searchText != '') {
+        return unwrapCancelable(
+          searchLocation(searchText, signal)
         )
-      } catch (err) {
-        console.error(err)
       }
+      else {
+        let position = null
+        try {
+          position = await unwrapCancelable(
+            getGeoPosition(controller.signal)
+          )
+        } catch (err) {
+          console.error(err)
+        }
 
-      return unwrapCancelable(
-        position != null ?
-          getLocationByGeoCoords(
-            position.coords.latitude,
-            position.coords.longitude,
-            controller.signal
-          ) :
+        return unwrapCancelable(
+          position != null ?
+            getLocationByGeoCoords(
+              position.coords.latitude,
+              position.coords.longitude,
+              controller.signal
+            ) :
 
-          getLocationByIP(controller.signal)
-      )
-    }
-  })();
+            getLocationByIP(controller.signal)
+        )
+      }
+    })(),
 
-  return { pr, controller }
+    controller
+  }
 }
 
 function getGeoPosition(signal) {
@@ -466,4 +477,13 @@ function locationKey(loc) {
 
     null
   )
+}
+
+function updateLocaleInfo() {
+  // re-detect user locale info (lang, timezone), in
+  // case it has changed
+  ({
+    localLanguage,
+    localTimezoneName
+  } = detectLocaleInfo())
 }

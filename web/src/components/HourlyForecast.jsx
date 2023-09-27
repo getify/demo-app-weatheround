@@ -67,7 +67,7 @@ function HourlyForecast({
   )
   const maxWindSpeed = Math.max(...windData)
   const parentWidth = (
-    document.querySelector("main").offsetWidth
+    document.querySelector('main').offsetWidth
   )
   const temperatureChartRef = useRef()
   const precipitationChartRef = useRef()

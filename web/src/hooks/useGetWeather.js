@@ -11,6 +11,7 @@ import {
   signalAbortPr
 } from 'src/lib/util.js'
 import {
+  updateLocaleInfo,
   localTimezoneName,
   fahrenheitCountries,
   mphCountries,
@@ -171,7 +172,10 @@ const weatherConditions = {
 //
 // temperature: 'fahrenheit' or 'celsius'
 // speed: 'mph' or 'kmh'
-let { temperatureUnit, speedUnit } = await getSavedDefaultWeatherUnits()
+let {
+  temperatureUnit,
+  speedUnit
+} = await getSavedDefaultWeatherUnits()
 
 
 export {
@@ -250,8 +254,10 @@ function useGetWeather({
       reqState.current.token = token
       reqState.current.onCancel = cancelWeatherLookup
 
-      getWeather({ loc, date, signal: controller.signal })
-      .pr.then(
+      unwrapCancelable(
+        getWeather({ loc, date, signal: controller.signal })
+      )
+      .then(
         v => {
           resolveWeatherPr(v)
           updateWeatherSlot(v)
@@ -297,27 +303,31 @@ function useGetWeather({
 function getWeather({ loc, date, signal}) {
   const controller = getAbortController(signal)
 
-  const pr = (async function getWeather(){
-    const resp = await fetch(
-      date != null ?
-        `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&start_date=${date}&end_date=${date}&current_weather=true&hourly=weathercode,temperature_2m,precipitation_probability,windspeed_10m,winddirection_10m&temperature_unit=${temperatureUnit}&windspeed_unit=${speedUnit}&timezone=${loc.timezoneName || localTimezoneName}` :
+  return {
+    pr: (async function getWeather(){
+      updateLocaleInfo()
 
-        `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&current_weather=true&daily=weathercode,sunrise,sunset,temperature_2m_max,temperature_2m_min,precipitation_probability_mean,windspeed_10m_max,winddirection_10m_dominant&temperature_unit=${temperatureUnit}&windspeed_unit=${speedUnit}&timezone=${loc.timezoneName || localTimezoneName}&forecast_days=7`
-    )
+      const resp = await fetch(
+        date != null ?
+          `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&start_date=${date}&end_date=${date}&current_weather=true&hourly=weathercode,temperature_2m,precipitation_probability,windspeed_10m,winddirection_10m&temperature_unit=${temperatureUnit}&windspeed_unit=${speedUnit}&timezone=${loc.timezoneName || localTimezoneName}` :
 
-    if (!resp.ok) {
-      throw new Error('failed api response')
-    }
+          `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&current_weather=true&daily=weathercode,sunrise,sunset,temperature_2m_max,temperature_2m_min,precipitation_probability_mean,windspeed_10m_max,winddirection_10m_dominant&temperature_unit=${temperatureUnit}&windspeed_unit=${speedUnit}&timezone=${loc.timezoneName || localTimezoneName}&forecast_days=7`
+      )
 
-    const json = await resp.json()
-    if (!json) {
-      throw new Error('invalid api response')
-    }
+      if (!resp.ok) {
+        throw new Error('failed api response')
+      }
 
-    return processWeather(loc, json, signal)
-  })()
+      const json = await resp.json()
+      if (!json) {
+        throw new Error('invalid api response')
+      }
 
-  return { pr, controller }
+      return processWeather(loc, json, signal)
+    })(),
+
+    controller
+  }
 }
 
 async function processWeather(loc, json, signal) {

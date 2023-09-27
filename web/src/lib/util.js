@@ -1,6 +1,7 @@
 import { localTimezoneName } from 'src/hooks/useGetLocation.js'
 
 export {
+  detectLocaleInfo,
   parseTimestamp,
   formatDateTimeLocale,
   formatTimeLocale,
@@ -16,6 +17,13 @@ export {
 
 
 // *******************
+
+function detectLocaleInfo() {
+  return {
+    localLanguage: (navigator.language || 'en-US').match(/^(?<lang>.+)(?:-.+)$/)?.groups?.lang,
+    localTimezoneName: Intl.DateTimeFormat().resolvedOptions().timeZone
+  }
+}
 
 function parseTimestamp(isoDateTime, tzOffset) {
   return new Date(Date.parse(`${isoDateTime}:00.000${tzOffset}`))
