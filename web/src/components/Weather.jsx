@@ -8,6 +8,11 @@ import WeatherUnitsControl from 'src/components/WeatherUnitsControl.jsx'
 import CurrentWeather from 'src/components/CurrentWeather.jsx'
 import WeatherForecast from 'src/components/WeatherForecast.jsx'
 import HourlyForecast from 'src/components/HourlyForecast.jsx'
+import JSONStore from 'src/lib/json-store.js'
+// import JSONStore from '@socketsupply/json-store'
+
+
+let timeMode = await getSavedTimeMode()
 
 
 export default Weather
@@ -20,15 +25,14 @@ function Weather({
   locFound,
   activateWeather,
   cancelWeather,
-  canceled = false,
-  selectedTimeMode,
-  updateTimeMode
+  canceled = false
 }) {
   // note: `let`s here are intentional
   let [ temperatureUnit, setTemperatureUnit ] = useState(null)
   let [ speedUnit, setSpeedUnit ] = useState(null)
   let [ forecastDate, setForecastDate ] = useState(null)
 
+  const [ selectedTimeMode, updateTimeMode ] = useState(timeMode)
   const locState = useRef(loc)
 
   // location has changed?
@@ -198,6 +202,7 @@ function Weather({
     else if (evt.target.matches('[name=pickTimeMode]')) {
       setForecastDate()
       activateWeather()
+      storeSavedTimeMode(evt.target.value)
       updateTimeMode(evt.target.value)
     }
   }
@@ -205,5 +210,19 @@ function Weather({
   function doRefresh() {
     activateWeather()
     updateWeatherToken(Math.random())
+  }
+}
+
+async function getSavedTimeMode() {
+  const timeMode = await JSONStore.getItem('default-time-mode')
+  return timeMode || 'remote'
+}
+
+async function storeSavedTimeMode(newTimeMode) {
+  if (newTimeMode != null) {
+    await JSONStore.setItem(
+      'default-time-mode',
+      timeMode = newTimeMode
+    )
   }
 }

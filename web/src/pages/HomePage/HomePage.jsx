@@ -4,11 +4,6 @@ import { useGetLocation, isLocationSaved } from 'src/hooks/useGetLocation.js'
 import Search from 'src/components/Search.jsx'
 import CurrentLocation from 'src/components/CurrentLocation.jsx'
 import Weather from 'src/components/Weather.jsx'
-import JSONStore from 'src/lib/json-store.js'
-// import JSONStore from '@socketsupply/json-store'
-
-
-let timeMode = await getSavedTimeMode()
 
 
 export default HomePage
@@ -29,7 +24,6 @@ function HomePage() {
     ...locState
   })
   const [ selectedLoc, setSelectedLoc ] = useState(null)
-  const [ selectedTimeMode, updateTimeMode ] = useState(timeMode)
   const searchInputRef = useRef()
 
   // hack: quietly (no re-render) reset location
@@ -62,12 +56,10 @@ function HomePage() {
 
       <Weather
         loc={selectedLoc || loc}
-        locFound={selectedLoc ? true : locFound}
+        locFound={locFound}
         activateWeather={doActivateWeather}
         cancelWeather={doCancelWeather}
         canceled={weatherCanceled}
-        selectedTimeMode={selectedTimeMode}
-        updateTimeMode={doUpdateTimeMode}
       />
     </>
   )
@@ -130,26 +122,7 @@ function HomePage() {
     clearSearchInput()
   }
 
-  function doUpdateTimeMode(newTimeMode) {
-    storeSavedTimeMode(newTimeMode)
-    updateTimeMode(newTimeMode)
-  }
-
   function clearSearchInput() {
     searchInputRef.current.value = ''
-  }
-}
-
-async function getSavedTimeMode() {
-  const timeMode = await JSONStore.getItem('default-time-mode')
-  return timeMode || 'remote'
-}
-
-async function storeSavedTimeMode(newTimeMode) {
-  if (newTimeMode != null) {
-    await JSONStore.setItem(
-      'default-time-mode',
-      timeMode = newTimeMode
-    )
   }
 }
