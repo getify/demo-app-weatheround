@@ -87,10 +87,6 @@ function HomePage() {
   }
 
   function doActivateLocation(locToSelect) {
-    if (loc != null) {
-      // sync location-saved flag
-      loc.saved = isLocationSaved(loc)
-    }
     resetLocState()
     setSelectedLoc(locToSelect)
     setSearchText(null)
