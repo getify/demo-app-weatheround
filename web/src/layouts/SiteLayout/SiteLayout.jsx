@@ -34,7 +34,7 @@ function SiteLayout({ children }) {
           {' '}|{' '}
 
           <a
-            href="https://github.com/socketsupply/demo-app-weatheround"
+            href="https://github.com/getify/demo-app-weatheround"
             target="_blank"
           >
             Source (Github)

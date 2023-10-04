@@ -33,13 +33,10 @@ function AboutPage() {
       <hr />
       <p className="justify-full">
         This app demonstrates using <a href="https://redwoodjs.com" target="_blank">RedwoodJS</a>
-        {' '}to build a static "serverless" web application, and then packaging
-        it as a native-hybrid app -- for all platforms and app stores! --
-        via <a href="https://github.com/socketsupply/socket" target="_blank">Socket
-        Supply's runtime + tooling</a>.
+        {' '}to build a static "serverless" web application.
       </p>
       <p>
-        The source code for this app <a href="https://github.com/socketsupply/demo-app-weatheround" target="_blank">can
+        The source code for this app <a href="https://github.com/getify/demo-app-weatheround" target="_blank">can
         be found on Github</a>.
       </p>
     </>
