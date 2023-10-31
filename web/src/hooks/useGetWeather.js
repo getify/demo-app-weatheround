@@ -265,7 +265,7 @@ function useGetWeather({
           updateWeatherSlot(v)
         },
         err => {
-          console.log(err)
+          console.log(err.stack)
           if (cancelWeatherPr) cancelWeatherPr()
         }
       )

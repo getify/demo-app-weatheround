@@ -22,7 +22,10 @@ export {
 
 function detectLocaleInfo() {
   return {
-    localLanguage: (navigator.language ?? 'en-US').match(/^(?<lang>.+)(?:-.+)$/)?.groups?.lang,
+    localLanguage: (
+      (navigator.language ?? 'en-US')
+      .match(/^(?<lang>.+)(?:-.+)$/)?.groups?.lang ?? 'en'
+    ),
     localTimezoneName: Intl.DateTimeFormat().resolvedOptions().timeZone
   }
 }
@@ -32,7 +35,13 @@ function parseTimestamp(isoDateTime, tzOffset) {
 }
 
 function getDOWStr(timestamp, timezone) {
-  return timestamp.toLocaleString(navigator.language ?? 'en-US', { timeZone: timezone, weekday: 'long' })
+  return timestamp.toLocaleString(
+    navigator.language ?? 'en-US',
+    {
+      timeZone: timezone,
+      weekday: 'long'
+    }
+  )
 }
 
 function formatDateTimeLocale(timestamp, timezone) {
@@ -44,8 +53,24 @@ function formatDateTimeLocale(timestamp, timezone) {
 }
 
 function formatTimeLocale(timestamp, timezone) {
-  const localTime = timestamp.toLocaleTimeString(navigator.language ?? 'en-US', { hour: 'numeric', minute: 'numeric', timeZone: localTimezoneName, timeZoneName: 'short' })
-  const remoteTime = timestamp.toLocaleTimeString(navigator.language ?? 'en-US', { hour: 'numeric', minute: 'numeric', timeZone: timezone, timeZoneName: 'short' })
+  const localTime = timestamp.toLocaleTimeString(
+    navigator.language ?? 'en-US',
+    {
+      hour: 'numeric',
+      minute: 'numeric',
+      timeZone: localTimezoneName,
+      timeZoneName: 'short'
+    }
+  )
+  const remoteTime = timestamp.toLocaleTimeString(
+    navigator.language ?? 'en-US',
+    {
+      hour: 'numeric',
+      minute: 'numeric',
+      timeZone: timezone,
+      timeZoneName: 'short'
+    }
+  )
 
   return {
     time: {
@@ -94,7 +119,13 @@ function getISOTimestampOffset(utcOffsetSeconds) {
 }
 
 function getLocaleTimezoneOffset(date, timezone) {
-  const localeStr = date.toLocaleString(navigator.language ?? 'en-US', { timeZone: timezone, timeZoneName: 'longOffset', })
+  const localeStr = date.toLocaleString(
+    navigator.language ?? 'en-US',
+    {
+      timeZone: timezone,
+      timeZoneName: 'longOffset'
+    }
+  )
   return localeStr.match(/[+\-][\d:]+$/)?.[0] ?? '+0:00'
 }
 
@@ -109,31 +140,38 @@ function getLocaleTimezoneShortName(isoDateTimeStr, timezone) {
     ampm = ''
   } = (
     isoDateTimeStr.match(dateTimeRE)?.groups ?? {}
-  )
-  year = Number(year)
-  month = Number(month)
-  day = Number(day)
-  hour = Number(hour)
-  minute = Number(minute)
+  );
+  [ year, month, day, hour, minute ] =
+    [ year, month, day, hour, minute ].map(Number)
   if (ampm == '') {
     ampm = (hour < 12) ? 'AM' : 'PM'
   }
   hour = ((hour + 11) % 12 + 1)
   const localeStr = (
-    new Date(Date.parse(`${year}/${month}/${day} ${hour}:${String(minute).padStart(2, '0')} ${ampm}`))
-    .toLocaleString(navigator.language ?? 'en-US', { timeZone: timezone, timeZoneName: 'short', })
+    new Date(Date.parse(
+      `${year}/${month}/${day} ${hour}:${String(minute).padStart(2, '0')} ${ampm}`
+    ))
+    .toLocaleString(
+      navigator.language ?? 'en-US',
+      {
+        timeZone: timezone,
+        timeZoneName: 'short'
+      }
+    )
   )
   return localeStr.match(/\s([^\s]+)$/)?.[1] ?? 'UTC'
 }
 
 function toLocaleISODateStr(localeDateStr) {
-  let [ , month, day, fullYear, ] = (
-    localeDateStr.match(/^(\d{1,2}).(\d{1,2}).(\d{4})$/)
-  )
-  month = Number(month)
-  day = Number(day)
-  fullYear = Number(fullYear)
-  return `${fullYear}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`
+  let {
+    month = 1,
+    day = 1,
+    fullYear = 1970
+  } = (
+    localeDateStr.match(/^(?<month>\d{1,2}).(?<day>\d{1,2}).(?<fullYear>\d{4})$/)?.groups ?? {}
+  );
+  [ fullYear, month, day ] = [ fullYear, month, day ].map(Number)
+  return `${fullYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
 function getAbortController(signal) {
