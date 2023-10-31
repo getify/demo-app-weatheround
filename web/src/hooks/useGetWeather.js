@@ -5,6 +5,8 @@ import {
   formatTimeLocale,
   formatDateLocale,
   getISOTimestampOffset,
+  getLocaleTimezoneOffset,
+  getLocaleTimezoneShortName,
   getAbortController,
   unwrapCancelable,
   getDeferred,
@@ -262,7 +264,10 @@ function useGetWeather({
           resolveWeatherPr(v)
           updateWeatherSlot(v)
         },
-        cancelWeatherPr
+        err => {
+          console.log(err)
+          if (cancelWeatherPr) cancelWeatherPr()
+        }
       )
       .catch(console.error)
       .finally(() => {
@@ -330,9 +335,27 @@ function getWeather({ loc, date, signal}) {
   }
 }
 
+function computeTZOffset(dateTimeStr, timezone) {
+  const tzShort = getLocaleTimezoneShortName(
+    dateTimeStr,
+    timezone
+  )
+  const dateTimeRE = /(?<date>\d{4}-\d{2}-\d{2})T(?<time>\d{1,2}:\d{1,2})/
+  const {
+    date: dateStr = '1970-01-01',
+    time: timeStr = '12:00'
+  } = dateTimeStr.match(dateTimeRE)?.groups ?? {}
+  const formattedDateTimeStr = `${dateStr} ${timeStr}:00.000 ${tzShort}`
+  return getLocaleTimezoneOffset(
+    new Date(Date.parse(formattedDateTimeStr)),
+    timezone
+  )
+}
+
 async function processWeather(loc, json, signal) {
-  const tzOffset = getISOTimestampOffset(
-    json.utc_offset_seconds
+  const recentTZOffset = computeTZOffset(
+    json.current_weather.time,
+    json.timezone
   )
 
   const current = (
@@ -341,16 +364,20 @@ async function processWeather(loc, json, signal) {
         isoDate: formatDateLocale(
           parseTimestamp(
             json.current_weather.time,
-            tzOffset
+            recentTZOffset
           ),
           json.timezone
         ).isoDate,
         dayTime: (json.current_weather.is_day === 1),
         conditions: {
           code: json.current_weather.weathercode,
+
+          // condition defaults
           label: 'Unknown',
           nightClass: 'unknown',
           dayClass: 'unknown',
+
+          // override condition defaults (if known)
           ...(weatherConditions[json.current_weather.weathercode] || {})
         },
         temperature: formatTemperature(
@@ -374,11 +401,11 @@ async function processWeather(loc, json, signal) {
           `${json.daily.precipitation_probability_mean[0]}%`
         ),
         sunrise: formatTimeLocale(
-          parseTimestamp(json.daily.sunrise[0], tzOffset),
+          parseTimestamp(json.daily.sunrise[0], recentTZOffset),
           json.timezone
         ),
         sunset: formatTimeLocale(
-          parseTimestamp(json.daily.sunset[0], tzOffset),
+          parseTimestamp(json.daily.sunset[0], recentTZOffset),
           json.timezone
         )
       } :
@@ -388,100 +415,120 @@ async function processWeather(loc, json, signal) {
 
   const future = (
     json.daily ?
-      Array.from({ length: 6, }).map((v, i) => ({
-        date: Object.assign(
-          {},
-          formatDateLocale(
-            parseTimestamp(
-              `${json.daily.time[i + 1]}T00:00`,
-              tzOffset
-            ),
-            json.timezone
-          ),
-          {
-            // override day for tomorrow?
-            ...(i === 0 ? { day: 'Tomorrow' } : {})
-          }
-        ),
-        conditions: {
-          code: json.daily.weathercode[i + 1],
-          label: 'Unknown',
-          nightClass: 'unknown',
-          dayClass: 'unknown',
-          ...(weatherConditions[json.daily.weathercode[i + 1]] || {})
-        },
-        lowTemp: formatTemperature(
-          json.daily.temperature_2m_min[i + 1],
-          json.daily_units.temperature_2m_max
-        ),
-        highTemp: formatTemperature(
-          json.daily.temperature_2m_max[i + 1],
-          json.daily_units.temperature_2m_max
-        ),
-        wind: formatWind(
-          json.daily.windspeed_10m_max[i + 1],
-          json.daily.winddirection_10m_dominant[i + 1],
-          json.daily_units.windspeed_10m_max
-        ),
-        precipitation: (
-          `${json.daily.precipitation_probability_mean[i + 1]}%`
-        ),
-        sunrise: formatTimeLocale(
-          parseTimestamp(json.daily.sunrise[i + 1], tzOffset),
-          json.timezone
-        ),
-        sunset: formatTimeLocale(
-          parseTimestamp(json.daily.sunset[i + 1], tzOffset),
+      Array.from({ length: 6, }).map((v, i) => {
+        const dayTZOffset = computeTZOffset(
+          `${json.daily.time[i + 1]}T12:00`,
           json.timezone
         )
-      })) :
+        return {
+          date: Object.assign(
+            {},
+            formatDateLocale(
+              parseTimestamp(
+                `${json.daily.time[i + 1]}T12:00`,
+                dayTZOffset
+              ),
+              json.timezone
+            ),
+            {
+              // override day for tomorrow?
+              ...(i === 0 ? { day: 'Tomorrow' } : {})
+            }
+          ),
+          conditions: {
+            code: json.daily.weathercode[i + 1],
+
+            // condition defaults
+            label: 'Unknown',
+            nightClass: 'unknown',
+            dayClass: 'unknown',
+
+            // override condition defaults (if known)
+            ...(weatherConditions[json.daily.weathercode[i + 1]] || {})
+          },
+          lowTemp: formatTemperature(
+            json.daily.temperature_2m_min[i + 1],
+            json.daily_units.temperature_2m_max
+          ),
+          highTemp: formatTemperature(
+            json.daily.temperature_2m_max[i + 1],
+            json.daily_units.temperature_2m_max
+          ),
+          wind: formatWind(
+            json.daily.windspeed_10m_max[i + 1],
+            json.daily.winddirection_10m_dominant[i + 1],
+            json.daily_units.windspeed_10m_max
+          ),
+          precipitation: (
+            `${json.daily.precipitation_probability_mean[i + 1]}%`
+          ),
+          sunrise: formatTimeLocale(
+            parseTimestamp(json.daily.sunrise[i + 1], dayTZOffset),
+            json.timezone
+          ),
+          sunset: formatTimeLocale(
+            parseTimestamp(json.daily.sunset[i + 1], dayTZOffset),
+            json.timezone
+          )
+        }
+      }) :
 
       null
   )
 
   const hourly = (
     json.hourly ?
-      Array.from({ length: 24, }).map((v, i) => ({
-        date: Object.assign(
-          {},
-          formatDateTimeLocale(
-            parseTimestamp(
-              json.hourly.time[i],
-              tzOffset
+      Array.from({ length: 24, }).map((v, i) => {
+        const hourTZOffset = computeTZOffset(
+          json.hourly.time[i],
+          json.timezone
+        )
+        return {
+          date: Object.assign(
+            {},
+            formatDateTimeLocale(
+              parseTimestamp(
+                json.hourly.time[i],
+                hourTZOffset
+              ),
+              json.timezone
             ),
-            json.timezone
+            {
+              // override day for today/tomorrow?
+              ...(
+                isToday(json.hourly.time[i]) ? { day: 'Today' } :
+                isTomorrow(json.hourly.time[i]) ? { day: 'Tomorrow' } :
+                {}
+              )
+            }
           ),
-          {
-            // override day for today/tomorrow?
-            ...(
-              isToday(json.hourly.time[i]) ? { day: 'Today' } :
-              isTomorrow(json.hourly.time[i]) ? { day: 'Tomorrow' } :
-              {}
-            )
-          }
-        ),
-        conditions: {
-          code: json.hourly.weathercode[i],
-          label: 'Unknown',
-          nightClass: 'unknown',
-          dayClass: 'unknown',
-          ...(weatherConditions[json.hourly.weathercode[i]] || {})
-        },
-        temp: formatTemperature(
-          json.hourly.temperature_2m[i],
-          json.hourly_units.temperature_2m
-        ),
-        tempUnit: json.hourly_units.temperature_2m,
-        wind: formatWind(
-          json.hourly.windspeed_10m[i],
-          json.hourly.winddirection_10m[i],
-          json.hourly_units.windspeed_10m
-        ),
-        windUnit: json.hourly_units.windspeed_10m,
-        precipitation: (
-          `${json.hourly.precipitation_probability[i]}%`
-        ),
-      })) :
+          conditions: {
+            code: json.hourly.weathercode[i],
+
+            // condition defaults
+            label: 'Unknown',
+            nightClass: 'unknown',
+            dayClass: 'unknown',
+
+            // override condition defaults (if known)
+            ...(weatherConditions[json.hourly.weathercode[i]] || {})
+          },
+          temp: formatTemperature(
+            json.hourly.temperature_2m[i],
+            json.hourly_units.temperature_2m
+          ),
+          tempUnit: json.hourly_units.temperature_2m,
+          wind: formatWind(
+            json.hourly.windspeed_10m[i],
+            json.hourly.winddirection_10m[i],
+            json.hourly_units.windspeed_10m
+          ),
+          windUnit: json.hourly_units.windspeed_10m,
+          precipitation: (
+            `${json.hourly.precipitation_probability[i]}%`
+          ),
+        }
+      }) :
 
       null
   )
@@ -489,12 +536,12 @@ async function processWeather(loc, json, signal) {
   return {
     temperatureUnit,
     speedUnit,
-    tzOffset,
+    tzOffset: recentTZOffset,
     timezone: json.timezone,
     ...loc,
     location: formatLocation(loc),
     lastUpdate: formatDateTimeLocale(
-      parseTimestamp(json.current_weather.time, tzOffset),
+      parseTimestamp(json.current_weather.time, recentTZOffset),
       json.timezone
     ),
     ...( current != null ? { current } : {}),
