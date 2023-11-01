@@ -8,7 +8,6 @@ export {
   formatDateLocale,
   getISOTimestampOffset,
   getLocaleTimezoneOffset,
-  getLocaleTimezoneShortName,
   getAbortController,
   unwrapCancelable,
   getDeferred,
@@ -118,18 +117,7 @@ function getISOTimestampOffset(utcOffsetSeconds) {
   return `${isNegOffset ? '-' : '+'}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
 }
 
-function getLocaleTimezoneOffset(date, timezone) {
-  const localeStr = date.toLocaleString(
-    navigator.language ?? 'en-US',
-    {
-      timeZone: timezone,
-      timeZoneName: 'longOffset'
-    }
-  )
-  return localeStr.match(/[+\-][\d:]+$/)?.[0] ?? '+0:00'
-}
-
-function getLocaleTimezoneShortName(isoDateTimeStr, timezone) {
+function getLocaleTimezoneOffset(isoDateTimeStr, timezone) {
   const dateTimeRE = /^(?<year>\d{4})-(?<month>\d{1,2})-(?<day>\d{1,2})(?:[\sT](?<hour>\d{1,2}):(?<minute>\d{1,2}))?(?::(?<second>\d{1,2}))?(?:.(?<microsecond>\d{3}))?(?:\s*(?<ampm>am|pm|AM|PM))?/
   let {
     year = 1970,
@@ -155,11 +143,11 @@ function getLocaleTimezoneShortName(isoDateTimeStr, timezone) {
       navigator.language ?? 'en-US',
       {
         timeZone: timezone,
-        timeZoneName: 'short'
+        timeZoneName: 'longOffset'
       }
     )
   )
-  return localeStr.match(/\s([^\s]+)$/)?.[1] ?? 'UTC'
+  return localeStr.match(/[+\-][\d:]+$/)?.[0] ?? '+0:00'
 }
 
 function toLocaleISODateStr(localeDateStr) {

@@ -6,7 +6,6 @@ import {
   formatDateLocale,
   getISOTimestampOffset,
   getLocaleTimezoneOffset,
-  getLocaleTimezoneShortName,
   getAbortController,
   unwrapCancelable,
   getDeferred,
@@ -335,25 +334,8 @@ function getWeather({ loc, date, signal}) {
   }
 }
 
-function computeTZOffset(dateTimeStr, timezone) {
-  const tzShort = getLocaleTimezoneShortName(
-    dateTimeStr,
-    timezone
-  )
-  const dateTimeRE = /(?<date>\d{4}-\d{2}-\d{2})T(?<time>\d{1,2}:\d{1,2})/
-  const {
-    date: dateStr = '1970-01-01',
-    time: timeStr = '12:00'
-  } = dateTimeStr.match(dateTimeRE)?.groups ?? {}
-  const formattedDateTimeStr = `${dateStr} ${timeStr}:00.000 ${tzShort}`
-  return getLocaleTimezoneOffset(
-    new Date(Date.parse(formattedDateTimeStr)),
-    timezone
-  )
-}
-
 async function processWeather(loc, json, signal) {
-  const recentTZOffset = computeTZOffset(
+  const recentTZOffset = getLocaleTimezoneOffset(
     json.current_weather.time,
     json.timezone
   )
@@ -416,7 +398,7 @@ async function processWeather(loc, json, signal) {
   const future = (
     json.daily ?
       Array.from({ length: 6, }).map((v, i) => {
-        const dayTZOffset = computeTZOffset(
+        const dayTZOffset = getLocaleTimezoneOffset(
           `${json.daily.time[i + 1]}T12:00`,
           json.timezone
         )
@@ -479,7 +461,7 @@ async function processWeather(loc, json, signal) {
   const hourly = (
     json.hourly ?
       Array.from({ length: 24, }).map((v, i) => {
-        const hourTZOffset = computeTZOffset(
+        const hourTZOffset = getLocaleTimezoneOffset(
           json.hourly.time[i],
           json.timezone
         )
