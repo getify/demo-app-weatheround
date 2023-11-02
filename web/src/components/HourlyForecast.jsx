@@ -86,7 +86,7 @@ function HourlyForecast({
       </p>
 
       <h2>
-        {hourlyForecast[0].date.day}{' '}
+        {hourlyForecast[0].date.dow}{' '}
         {hourlyForecast[0].date.date}
         {
           displayTimezone != null ? ` (${displayTimezone})` : null

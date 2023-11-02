@@ -45,7 +45,7 @@ function WeatherForecastDay({
   return (
     <div className="forecast-day">
       <div className="weather-date">
-        {date.day} {date.date}
+        {date.dow} {date.date}
       </div>
 
       <div className="temperature">

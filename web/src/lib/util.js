@@ -3,13 +3,15 @@ import { localTimezoneName } from 'src/hooks/useGetLocation.js'
 export {
   detectLocaleInfo,
   buildTimestamp,
+  getDOWStr,
+  formatISODate,
   formatDateTimeLocale,
   formatTimeLocale,
   formatDateLocale,
-  getISOTimestampOffset,
+  getISODateStr,
   getTimestampOffsetSeconds,
   getLocaleTimezoneOffset,
-  toLocaleISODateStr,
+  getPrevDayISODateStr,
   getNextDayISODateStr,
   getAbortController,
   unwrapCancelable,
@@ -44,6 +46,11 @@ function getDOWStr(timestamp, timezone) {
       weekday: 'long'
     }
   )
+}
+
+// format date string using ISO-8601 yyyy-mm-dd format
+function formatISODate(fullYear, month, day) {
+  return `${fullYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
 function formatDateTimeLocale(timestamp, timezone) {
@@ -84,7 +91,7 @@ function formatTimeLocale(timestamp, timezone) {
 }
 
 function formatDateLocale(timestamp, timezone) {
-  const day = getDOWStr(timestamp, timezone)
+  const dow = getDOWStr(timestamp, timezone)
   const date = timestamp.toLocaleDateString(
     navigator.language ?? 'en-US',
     {
@@ -93,8 +100,21 @@ function formatDateLocale(timestamp, timezone) {
       timeZone: timezone
     }
   )
+  const isoDate = getISODateStr(timestamp, timezone)
 
+  return {
+    dow,
+    date,
+    isoDate,
+    timestamp: timestamp.getTime()
+  }
+}
+
+// reliably convert timestamp to ISO date format (yyyy-mm-dd)
+function getISODateStr(timestamp, timezone) {
   const dateStr = timestamp.toLocaleDateString(
+    // manually specifying the 'en-US' locale so the
+    // date format is predictably mm/dd/yyy
     'en-US',
     {
       year: 'numeric',
@@ -103,21 +123,14 @@ function formatDateLocale(timestamp, timezone) {
       timeZone: timezone
     }
   )
-  const isoDate = toLocaleISODateStr(dateStr)
-
-  return {
-    day,
-    date,
-    isoDate,
-    timestamp: timestamp.getTime()
-  }
-}
-
-function getISOTimestampOffset(utcOffsetSeconds) {
-  const isNegOffset = utcOffsetSeconds < 0
-  const offsetHours = Math.abs(Math.floor(utcOffsetSeconds / 3600))
-  const offsetMinutes = (Math.abs(utcOffsetSeconds) / 60) - (offsetHours * 60)
-  return `${isNegOffset ? '-' : '+'}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
+  const {
+    month = 1,
+    day = 1,
+    fullYear = 1970
+  } = (
+    dateStr.match(/^(?<month>\d{1,2}).(?<day>\d{1,2}).(?<fullYear>\d{4})$/)?.groups ?? {}
+  );
+  return formatISODate(...[ fullYear, month, day ].map(Number))
 }
 
 function getTimestampOffsetSeconds(isoTZOffset) {
@@ -164,16 +177,29 @@ function getLocaleTimezoneOffset(isoDateTimeStr, timezone) {
   return localeStr.match(/[+\-][\d:]+$/)?.[0] ?? '+0:00'
 }
 
-function toLocaleISODateStr(localeDateStr) {
+function getPrevDayISODateStr(isoDateStr) {
+  const isoDateRE = /^(?<fullYear>\d{4})-(?<month>\d{1,2})-(?<day>\d{1,2})/
   let {
-    month = 1,
-    day = 1,
-    fullYear = 1970
-  } = (
-    localeDateStr.match(/^(?<month>\d{1,2}).(?<day>\d{1,2}).(?<fullYear>\d{4})$/)?.groups ?? {}
-  );
-  [ fullYear, month, day ] = [ fullYear, month, day ].map(Number)
-  return `${fullYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    month,
+    day,
+    fullYear
+  } = isoDateStr.match(isoDateRE)?.groups ?? {};
+  [ month, day, fullYear ] = [ month, day, fullYear ].map(Number)
+
+  // subtract 1 day from the date
+  //
+  // note: intentionally using the Date() constructor
+  // that is locale-timezone aware, because all we care
+  // about is the relative date math of subtracting a day,
+  // and then we read back out the month/day/year from
+  // that instance; thus, timezone doesn't matter, so
+  // we ignore whatever the current locale timezone is
+  const nextDate = new Date(fullYear, month - 1, day - 1)
+
+  month = nextDate.getMonth() + 1
+  day = nextDate.getDate()
+  fullYear = nextDate.getFullYear()
+  return formatISODate(fullYear, month, day)
 }
 
 function getNextDayISODateStr(isoDateStr) {
@@ -198,7 +224,7 @@ function getNextDayISODateStr(isoDateStr) {
   month = nextDate.getMonth() + 1
   day = nextDate.getDate()
   fullYear = nextDate.getFullYear()
-  return `${fullYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  return formatISODate(fullYear, month, day)
 }
 
 function getAbortController(signal) {

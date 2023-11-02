@@ -4,9 +4,10 @@ import {
   formatDateTimeLocale,
   formatTimeLocale,
   formatDateLocale,
-  getISOTimestampOffset,
+  getISODateStr,
   getTimestampOffsetSeconds,
   getLocaleTimezoneOffset,
+  getPrevDayISODateStr,
   getNextDayISODateStr,
   getAbortController,
   unwrapCancelable,
@@ -306,20 +307,110 @@ function useGetWeather({
   }
 }
 
-function getWeather({ loc, date, signal}) {
+function getForecastDateRange(timezone) {
+  const today = getISODateStr(new Date(), timezone)
+  return Array.from({ length: 6, }).reduce(
+    (dates, _) => [
+      ...dates,
+      getNextDayISODateStr(dates[dates.length - 1])
+    ],
+    [ today ]
+  )
+}
+
+// compute if a DST change occurs during forecast date range
+function computeForecastDateRangeDST(timezone) {
+  let dstChange = false
+  let dstStart = null
+  let dstEnd = null
+
+  const forecastDates = getForecastDateRange(timezone)
+
+  for (let date of forecastDates) {
+    const startingTZOffsetSeconds = getTimestampOffsetSeconds(
+      getLocaleTimezoneOffset(
+        `${date}T00:01`,
+        timezone
+      )
+    )
+    const endingTZOffsetSeconds = getTimestampOffsetSeconds(
+      getLocaleTimezoneOffset(
+        `${date}T23:59`,
+        timezone
+      )
+    )
+
+    // TZ offset changes during the day (DST change)?
+    if (startingTZOffsetSeconds !== endingTZOffsetSeconds) {
+      dstChange = true
+
+      const tzOffsetDelta = endingTZOffsetSeconds - startingTZOffsetSeconds
+      if (tzOffsetDelta > 0) {
+        dstStart = date
+      }
+      else {
+        dstEnd = date
+      }
+
+      break
+    }
+  }
+
+  return {
+    dstChange,
+    dstStart,
+    dstEnd,
+    forecastDates
+  }
+}
+
+function getWeather({ loc, date, signal }) {
   const controller = getAbortController(signal)
 
   return {
     pr: (async function getWeather(){
       updateLocaleInfo()
 
-      const nextDayDate = date != null ?
-        getNextDayISODateStr(date) :
-        null
+      const forecastDatesDST = computeForecastDateRangeDST(
+        loc.timezoneName || localTimezoneName
+      )
+
+      let startDayDate = date
+      let endDayDate = date
+
+      // requesting hourly forecast data?
+      if (date != null) {
+        forecastDatesDST.date = date
+
+        // requesting hourly forecast data beyond a
+        // future *starting-DST* day
+        if (
+          forecastDatesDST.dstStart != null &&
+          date > forecastDatesDST.dstStart
+        ) {
+          // include hourly data for the day before the
+          // date in question; needed to compensate for
+          // off-by-one hourly data due to weather API's
+          // non-DST-awareness for forecasts
+          startDayDate = getPrevDayISODateStr(date)
+        }
+        // requesting hourly forecast data at or beyond a
+        // future *ending-DST* day
+        else if (
+          forecastDatesDST.dstEnd != null &&
+          date >= forecastDatesDST.dstEnd
+        ) {
+          // include hourly data for the day after the
+          // date in question; needed to compensate for
+          // off-by-one hourly data due to weather API's
+          // non-DST-awareness for forecasts
+          endDayDate = getNextDayISODateStr(date)
+        }
+      }
 
       const resp = await fetch(
         date != null ?
-          `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&start_date=${date}&end_date=${nextDayDate}&current_weather=true&hourly=weathercode,temperature_2m,precipitation_probability,windspeed_10m,winddirection_10m&temperature_unit=${temperatureUnit}&windspeed_unit=${speedUnit}&timezone=${loc.timezoneName || localTimezoneName}` :
+          `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&start_date=${startDayDate}&end_date=${endDayDate}&current_weather=true&hourly=weathercode,temperature_2m,precipitation_probability,windspeed_10m,winddirection_10m&temperature_unit=${temperatureUnit}&windspeed_unit=${speedUnit}&timezone=${loc.timezoneName || localTimezoneName}` :
 
           `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&current_weather=true&daily=weathercode,sunrise,sunset,temperature_2m_max,temperature_2m_min,precipitation_probability_mean,windspeed_10m_max,winddirection_10m_dominant&temperature_unit=${temperatureUnit}&windspeed_unit=${speedUnit}&timezone=${loc.timezoneName || localTimezoneName}&forecast_days=7`
       )
@@ -333,14 +424,14 @@ function getWeather({ loc, date, signal}) {
         throw new Error('invalid api response')
       }
 
-      return processWeather(loc, json, signal)
+      return processWeather(loc, json, forecastDatesDST)
     })(),
 
     controller
   }
 }
 
-async function processWeather(loc, json, signal) {
+async function processWeather(loc, json, forecastDatesDST) {
   const recentTZOffset = getLocaleTimezoneOffset(
     json.current_weather.time,
     json.timezone
@@ -464,39 +555,158 @@ async function processWeather(loc, json, signal) {
       null
   )
 
-  // compute base offset for this day's set of hourly
-  // data note: weather API does not reflect DST changes
-  // hour-by-hour
-  // Ref: https://github.com/open-meteo/open-meteo/issues/490#issuecomment-1787264107
-  const baseHourlyTZOffset = json.hourly ?
-    getLocaleTimezoneOffset(
-      json.hourly.time[0],
-      json.timezone
-    ) :
-    null
-  const baseHourlyTZOffsetSeconds = json.hourly ?
-    getTimestampOffsetSeconds(baseHourlyTZOffset) :
-    0
-  let DSTstarted = false
-  let DSTended = false
-  const hourly = (
-    json.hourly ?
-      Array.from({ length: 25, }).map((v, i) => {
+  let hourly = null
+
+  // processing hourly forecast data (for a specific day?)
+  if (json.hourly) {
+    // handle DST change during the forecast range, to
+    // fix off-by-one errors?
+    //
+    // NOTE: weather API does not reflect DST changes in
+    // forecast data
+    // Ref: https://github.com/open-meteo/open-meteo/issues/490
+    if (forecastDatesDST.dstChange) {
+      // processing hourly forecast data for a
+      // future *starting-DST* day
+      if (
+        forecastDatesDST.dstStart != null &&
+        forecastDatesDST.date === forecastDatesDST.dstStart
+      ) {
+        json.hourly = Object.fromEntries(
+          [ ...Object.entries(json.hourly) ]
+          .map(([ key, data ]) => {
+            if (key === 'time') {
+              return [
+                key,
+                data
+                  // to fix off-by-one error in hour labels, need
+                  // to skip the "2am" slot on a DST-start day;
+                  // slide all hour labels, from "3am" onward,
+                  // upward/earlier by one slot; the hours will
+                  // thus be: "00:00", "01:00", "03:00", ...
+                  // "23:00", "23:00"
+                  .map((v, idx) => (
+                    (idx >= 2 && idx < (data.length - 1)) ?
+                      data[idx + 1] :
+                      v
+                  ))
+
+                  // drop the last hour label (duplicated "23:00")
+                  .slice(0, -1)
+              ]
+            }
+            else {
+              // only need 23 data entries on a DST-start day,
+              // since "2am" is skipped
+              return [ key, data.slice(0, -1) ]
+            }
+          })
+        )
+      }
+      // processing hourly forecast data beyond a
+      // future *starting-DST* day
+      else if (
+        forecastDatesDST.dstStart != null &&
+        forecastDatesDST.date > forecastDatesDST.dstStart
+      ) {
+        json.hourly = Object.fromEntries(
+          [ ...Object.entries(json.hourly) ]
+          .map(([ key, data ]) => {
+            if (key === 'time') {
+              return [
+                key,
+                Array.from({ length: 24 })
+                  // to fix off-by-one error in all data entries,
+                  // slide them all upward/earlier by one slot; the
+                  // hours will thus be: "23:00" (day before), "00:00"
+                  // (day of), "01:00", ... "22:00"
+                  .map((v, idx) => data[idx + 24])
+             ]
+            }
+            else {
+              // to fix off-by-one error, get 24 entries
+              // from "23:00" the day before, to (and including)
+              // "22:00" on the date in question
+              return [ key, data.slice(-25, -1) ]
+            }
+          })
+        )
+      }
+      // processing hourly forecast data for a
+      // future *ending-DST* day
+      else if (
+        forecastDatesDST.dstEnd != null &&
+        forecastDatesDST.date === forecastDatesDST.dstEnd
+      ) {
+        json.hourly = Object.fromEntries(
+          [ ...Object.entries(json.hourly) ]
+          .map(([ key, data ]) => {
+            if (key === 'time') {
+              return [
+                key,
+                data
+                  // to fix off-by-one error in hour labels, need
+                  // to repeat the "1am" slot on a DST-end day;
+                  // slide all hour labels, from "1am" onward,
+                  // downward/later by one slot; the hours will
+                  // thus be: "00:00", "01:00", "01:00", "02:00",
+                  // ... "23:00"
+                  .slice(0, 25)
+                  .reverse()
+                  .map((v, idx) => (
+                    (idx < 23) ?
+                      data[24 - (idx + 1)] :
+                      v
+                  ))
+                  .reverse()
+              ]
+            }
+            else {
+              // actually need 25 data entries on a DST-end day,
+              // since "1am" is repeated
+              return [ key, data.slice(0, 25) ]
+            }
+          })
+        )
+      }
+      // processing hourly forecast data beyond a
+      // future *ending-DST* day
+      else if (
+        forecastDatesDST.dstEnd != null &&
+        forecastDatesDST.date > forecastDatesDST.dstEnd
+      ) {
+        json.hourly = Object.fromEntries(
+          [ ...Object.entries(json.hourly) ]
+          .map(([ key, data ]) => {
+            if (key === 'time') {
+              return [
+                key,
+                Array.from({ length: 24 })
+                  // to fix off-by-one error in hour labels,
+                  // slide them downward/later by one slot; the
+                  // hours will thus be: "01:00", "02:00", ...
+                  // "23:00", "00:00" (day after)
+                  .map((v, idx) => data[24 - (idx + 1)])
+                  .reverse()
+              ]
+            }
+            else {
+              // to fix off-by-one error, get 24 entries
+              // from "01:00" on the date in question, to (and
+              // including) "00:00" on the next day
+              return [ key, data.slice(1, 25) ]
+            }
+          })
+        )
+      }
+    }
+
+    hourly = Array.from({ length: json.hourly.time.length })
+      .map((v, i) => {
         const hourTZOffset = getLocaleTimezoneOffset(
           json.hourly.time[i],
           json.timezone
         )
-
-        // DST change hasn't been detected yet?
-        if (!DSTstarted && !DSTended) {
-          // compute each hour's offset, to detect if
-          // there's been a DST change mid-day
-          const hourTZOffsetSeconds =
-            getTimestampOffsetSeconds(hourTZOffset)
-          const tzDelta = hourTZOffsetSeconds - baseHourlyTZOffsetSeconds
-          DSTstarted = tzDelta > 0
-          DSTended = tzDelta < 0
-        }
 
         return {
           date: formatDateTimeLocale(
@@ -532,43 +742,7 @@ async function processWeather(loc, json, signal) {
             `${json.hourly.precipitation_probability[i]}%`
           ),
         }
-      }) :
-
-      null
-  )
-
-  // pulling hourly entries, but NOT for the DST-end day?
-  if (hourly && !DSTended) {
-    // discard the unnecessary final (25th) hourly entry
-    hourly.length = 24
-  }
-
-  if (DSTstarted) {
-    // on DST-start day, only need to render 23 clock hours
-    // (because 2am is "skipped"); compensate for off-by-one
-    // error in time labels by shifting labels up one slot,
-    // from "3am" onward
-    for (const [ idx, entry ] of Object.entries(hourly)) {
-      if (idx > 1 && idx < (hourly.length - 1)) {
-        entry.date = hourly[Number(idx) + 1].date
-      }
-    }
-
-    // discard the final (24th) entry, which is technically now
-    // duplicative of midnite the following day
-    hourly.length = 23
-  }
-  else if (DSTended) {
-    // when DST ends, actually need to render 25 clock hours
-    // (because 1am is "repeated"); compensate for off-by-one
-    // error in time labels by shifting labels down one slot,
-    // from "1am" onward; the 25th entry ("11pm" slot) is
-    // actually the first entry from the *next* day
-    for (const [ idx, entry ] of Object.entries([ ...hourly ].reverse())) {
-      if (idx < (hourly.length - 2)) {
-        entry.date = hourly[24 - (Number(idx) + 1)].date
-      }
-    }
+      })
   }
 
   return {
