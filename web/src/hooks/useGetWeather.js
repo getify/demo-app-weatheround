@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import {
-  parseTimestamp,
+  buildTimestamp,
   formatDateTimeLocale,
   formatTimeLocale,
   formatDateLocale,
   getISOTimestampOffset,
+  getTimestampOffsetSeconds,
   getLocaleTimezoneOffset,
+  getNextDayISODateStr,
   getAbortController,
   unwrapCancelable,
   getDeferred,
@@ -311,9 +313,13 @@ function getWeather({ loc, date, signal}) {
     pr: (async function getWeather(){
       updateLocaleInfo()
 
+      const nextDayDate = date != null ?
+        getNextDayISODateStr(date) :
+        null
+
       const resp = await fetch(
         date != null ?
-          `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&start_date=${date}&end_date=${date}&current_weather=true&hourly=weathercode,temperature_2m,precipitation_probability,windspeed_10m,winddirection_10m&temperature_unit=${temperatureUnit}&windspeed_unit=${speedUnit}&timezone=${loc.timezoneName || localTimezoneName}` :
+          `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&start_date=${date}&end_date=${nextDayDate}&current_weather=true&hourly=weathercode,temperature_2m,precipitation_probability,windspeed_10m,winddirection_10m&temperature_unit=${temperatureUnit}&windspeed_unit=${speedUnit}&timezone=${loc.timezoneName || localTimezoneName}` :
 
           `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lng}&current_weather=true&daily=weathercode,sunrise,sunset,temperature_2m_max,temperature_2m_min,precipitation_probability_mean,windspeed_10m_max,winddirection_10m_dominant&temperature_unit=${temperatureUnit}&windspeed_unit=${speedUnit}&timezone=${loc.timezoneName || localTimezoneName}&forecast_days=7`
       )
@@ -344,7 +350,7 @@ async function processWeather(loc, json, signal) {
     (json.current_weather && json.hourly == null) ?
       {
         isoDate: formatDateLocale(
-          parseTimestamp(
+          buildTimestamp(
             json.current_weather.time,
             recentTZOffset
           ),
@@ -383,11 +389,11 @@ async function processWeather(loc, json, signal) {
           `${json.daily.precipitation_probability_mean[0]}%`
         ),
         sunrise: formatTimeLocale(
-          parseTimestamp(json.daily.sunrise[0], recentTZOffset),
+          buildTimestamp(json.daily.sunrise[0], recentTZOffset),
           json.timezone
         ),
         sunset: formatTimeLocale(
-          parseTimestamp(json.daily.sunset[0], recentTZOffset),
+          buildTimestamp(json.daily.sunset[0], recentTZOffset),
           json.timezone
         )
       } :
@@ -406,7 +412,7 @@ async function processWeather(loc, json, signal) {
           date: Object.assign(
             {},
             formatDateLocale(
-              parseTimestamp(
+              buildTimestamp(
                 `${json.daily.time[i + 1]}T12:00`,
                 dayTZOffset
               ),
@@ -445,11 +451,11 @@ async function processWeather(loc, json, signal) {
             `${json.daily.precipitation_probability_mean[i + 1]}%`
           ),
           sunrise: formatTimeLocale(
-            parseTimestamp(json.daily.sunrise[i + 1], dayTZOffset),
+            buildTimestamp(json.daily.sunrise[i + 1], dayTZOffset),
             json.timezone
           ),
           sunset: formatTimeLocale(
-            parseTimestamp(json.daily.sunset[i + 1], dayTZOffset),
+            buildTimestamp(json.daily.sunset[i + 1], dayTZOffset),
             json.timezone
           )
         }
@@ -458,31 +464,47 @@ async function processWeather(loc, json, signal) {
       null
   )
 
+  // compute base offset for this day's set of hourly
+  // data note: weather API does not reflect DST changes
+  // hour-by-hour
+  // Ref: https://github.com/open-meteo/open-meteo/issues/490#issuecomment-1787264107
+  const baseHourlyTZOffset = json.hourly ?
+    getLocaleTimezoneOffset(
+      json.hourly.time[0],
+      json.timezone
+    ) :
+    null
+  const baseHourlyTZOffsetSeconds = json.hourly ?
+    getTimestampOffsetSeconds(baseHourlyTZOffset) :
+    0
+  let DSTstarted = false
+  let DSTended = false
   const hourly = (
     json.hourly ?
-      Array.from({ length: 24, }).map((v, i) => {
+      Array.from({ length: 25, }).map((v, i) => {
         const hourTZOffset = getLocaleTimezoneOffset(
           json.hourly.time[i],
           json.timezone
         )
+
+        // DST change hasn't been detected yet?
+        if (!DSTstarted && !DSTended) {
+          // compute each hour's offset, to detect if
+          // there's been a DST change mid-day
+          const hourTZOffsetSeconds =
+            getTimestampOffsetSeconds(hourTZOffset)
+          const tzDelta = hourTZOffsetSeconds - baseHourlyTZOffsetSeconds
+          DSTstarted = tzDelta > 0
+          DSTended = tzDelta < 0
+        }
+
         return {
-          date: Object.assign(
-            {},
-            formatDateTimeLocale(
-              parseTimestamp(
-                json.hourly.time[i],
-                hourTZOffset
-              ),
-              json.timezone
+          date: formatDateTimeLocale(
+            buildTimestamp(
+              json.hourly.time[i],
+              hourTZOffset
             ),
-            {
-              // override day for today/tomorrow?
-              ...(
-                isToday(json.hourly.time[i]) ? { day: 'Today' } :
-                isTomorrow(json.hourly.time[i]) ? { day: 'Tomorrow' } :
-                {}
-              )
-            }
+            json.timezone
           ),
           conditions: {
             code: json.hourly.weathercode[i],
@@ -515,6 +537,40 @@ async function processWeather(loc, json, signal) {
       null
   )
 
+  // pulling hourly entries, but NOT for the DST-end day?
+  if (hourly && !DSTended) {
+    // discard the unnecessary final (25th) hourly entry
+    hourly.length = 24
+  }
+
+  if (DSTstarted) {
+    // on DST-start day, only need to render 23 clock hours
+    // (because 2am is "skipped"); compensate for off-by-one
+    // error in time labels by shifting labels up one slot,
+    // from "3am" onward
+    for (const [ idx, entry ] of Object.entries(hourly)) {
+      if (idx > 1 && idx < (hourly.length - 1)) {
+        entry.date = hourly[Number(idx) + 1].date
+      }
+    }
+
+    // discard the final (24th) entry, which is technically now
+    // duplicative of midnite the following day
+    hourly.length = 23
+  }
+  else if (DSTended) {
+    // when DST ends, actually need to render 25 clock hours
+    // (because 1am is "repeated"); compensate for off-by-one
+    // error in time labels by shifting labels down one slot,
+    // from "1am" onward; the 25th entry ("11pm" slot) is
+    // actually the first entry from the *next* day
+    for (const [ idx, entry ] of Object.entries([ ...hourly ].reverse())) {
+      if (idx < (hourly.length - 2)) {
+        entry.date = hourly[24 - (Number(idx) + 1)].date
+      }
+    }
+  }
+
   return {
     temperatureUnit,
     speedUnit,
@@ -523,7 +579,7 @@ async function processWeather(loc, json, signal) {
     ...loc,
     location: formatLocation(loc),
     lastUpdate: formatDateTimeLocale(
-      parseTimestamp(json.current_weather.time, recentTZOffset),
+      buildTimestamp(json.current_weather.time, recentTZOffset),
       json.timezone
     ),
     ...( current != null ? { current } : {}),

@@ -2,12 +2,15 @@ import { localTimezoneName } from 'src/hooks/useGetLocation.js'
 
 export {
   detectLocaleInfo,
-  parseTimestamp,
+  buildTimestamp,
   formatDateTimeLocale,
   formatTimeLocale,
   formatDateLocale,
   getISOTimestampOffset,
+  getTimestampOffsetSeconds,
   getLocaleTimezoneOffset,
+  toLocaleISODateStr,
+  getNextDayISODateStr,
   getAbortController,
   unwrapCancelable,
   getDeferred,
@@ -29,7 +32,7 @@ function detectLocaleInfo() {
   }
 }
 
-function parseTimestamp(isoDateTime, tzOffset) {
+function buildTimestamp(isoDateTime, tzOffset) {
   return new Date(Date.parse(`${isoDateTime}:00.000${tzOffset}`))
 }
 
@@ -117,6 +120,17 @@ function getISOTimestampOffset(utcOffsetSeconds) {
   return `${isNegOffset ? '-' : '+'}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
 }
 
+function getTimestampOffsetSeconds(isoTZOffset) {
+  const isNegOffset = isoTZOffset[0] === '-'
+  const parts = isoTZOffset.match(/^[+\-]?(\d+)(?::(\d+))?$/) ?? []
+  if (parts.length > 0) {
+    const hours = Number(parts[2] != null ? parts[1] : 0)
+    const minutes = Number(parts[2] != null ? parts[2] : parts[1])
+    return (isNegOffset ? -1 : 1) * (minutes + (hours * 60)) * 60
+  }
+  return 0
+}
+
 function getLocaleTimezoneOffset(isoDateTimeStr, timezone) {
   const dateTimeRE = /^(?<year>\d{4})-(?<month>\d{1,2})-(?<day>\d{1,2})(?:[\sT](?<hour>\d{1,2}):(?<minute>\d{1,2}))?(?::(?<second>\d{1,2}))?(?:.(?<microsecond>\d{3}))?(?:\s*(?<ampm>am|pm|AM|PM))?/
   let {
@@ -159,6 +173,31 @@ function toLocaleISODateStr(localeDateStr) {
     localeDateStr.match(/^(?<month>\d{1,2}).(?<day>\d{1,2}).(?<fullYear>\d{4})$/)?.groups ?? {}
   );
   [ fullYear, month, day ] = [ fullYear, month, day ].map(Number)
+  return `${fullYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+function getNextDayISODateStr(isoDateStr) {
+  const isoDateRE = /^(?<fullYear>\d{4})-(?<month>\d{1,2})-(?<day>\d{1,2})/
+  let {
+    month,
+    day,
+    fullYear
+  } = isoDateStr.match(isoDateRE)?.groups ?? {};
+  [ month, day, fullYear ] = [ month, day, fullYear ].map(Number)
+
+  // add 1 day to the date
+  //
+  // note: intentionally using the Date() constructor
+  // that is locale-timezone aware, because all we care
+  // about is the relative date math of adding a day,
+  // and then we read back out the month/day/year from
+  // that instance; thus, timezone doesn't matter, so
+  // we ignore whatever the current locale timezone is
+  const nextDate = new Date(fullYear, month - 1, day + 1)
+
+  month = nextDate.getMonth() + 1
+  day = nextDate.getDate()
+  fullYear = nextDate.getFullYear()
   return `${fullYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
