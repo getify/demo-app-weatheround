@@ -11,7 +11,6 @@ import {
   getSavedDefaultWeatherUnits
 } from 'src/hooks/useGetWeather.js'
 import JSONStore from 'src/lib/json-store.js'
-// import JSONStore from '@socketsupply/json-store'
 
 
 // https://worldpopulace.com/countries-that-use-fahrenheit

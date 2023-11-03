@@ -9,7 +9,6 @@ import CurrentWeather from 'src/components/CurrentWeather.jsx'
 import WeatherForecast from 'src/components/WeatherForecast.jsx'
 import HourlyForecast from 'src/components/HourlyForecast.jsx'
 import JSONStore from 'src/lib/json-store.js'
-// import JSONStore from '@socketsupply/json-store'
 
 
 let timeMode = await getSavedTimeMode()

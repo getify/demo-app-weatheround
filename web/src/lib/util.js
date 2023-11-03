@@ -9,6 +9,7 @@ export {
   formatTimeLocale,
   formatDateLocale,
   getISODateStr,
+  getISOTimestampOffset,
   getTimestampOffsetSeconds,
   getLocaleTimezoneOffset,
   getPrevDayISODateStr,
@@ -131,6 +132,13 @@ function getISODateStr(timestamp, timezone) {
     dateStr.match(/^(?<month>\d{1,2}).(?<day>\d{1,2}).(?<fullYear>\d{4})$/)?.groups ?? {}
   );
   return formatISODate(...[ fullYear, month, day ].map(Number))
+}
+
+function getISOTimestampOffset(utcOffsetSeconds) {
+  const isNegOffset = utcOffsetSeconds < 0
+  const offsetHours = Math.abs(Math.floor(utcOffsetSeconds / 3600))
+  const offsetMinutes = (Math.abs(utcOffsetSeconds) / 60) - (offsetHours * 60)
+  return `${isNegOffset ? '-' : '+'}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
 }
 
 function getTimestampOffsetSeconds(isoTZOffset) {
