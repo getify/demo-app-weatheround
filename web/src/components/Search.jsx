@@ -1,8 +1,5 @@
-import { useRef, forwardRef } from 'react'
+import { useRef } from 'react'
 import { cancelEvt } from 'src/lib/util.js'
-
-
-Search = forwardRef(Search)
 
 
 export default Search
@@ -10,17 +7,15 @@ export default Search
 
 // *******************
 
-function Search(
-  {
+function Search({
     locFound,
     searchText,
     setSelectedLoc,
     setSearchText,
     resetLocState,
-    setWeatherCanceled
-  },
-  searchInputExternalRef
-) {
+    setWeatherCanceled,
+    searchInputExternalRef
+}) {
   const searchInputInternalRef = useRef()
 
   if (

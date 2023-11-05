@@ -43,7 +43,7 @@ function HomePage() {
         setSearchText={setSearchText}
         resetLocState={resetLocState}
         setWeatherCanceled={setWeatherCanceled}
-        ref={searchInputRef}
+        searchInputExternalRef={searchInputRef}
       />
 
       <CurrentLocation
