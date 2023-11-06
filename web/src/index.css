@@ -443,9 +443,7 @@ button.icon-text-btn.back::before {
   background-color: yellow;
 }
 
-
-
-
+/**********************************/
 
 #select-hourly-chart {
   margin-bottom: calc(var(--vh-unit) * 2);
@@ -491,12 +489,7 @@ button.icon-text-btn.back::before {
   border-color: rgba(var(--color-yellow-1));
 }
 
-
-
-
-
-
-
+/**********************************/
 
 .hidden {
   display: none !important;
@@ -1001,6 +994,196 @@ footer {
   margin-right: calc(var(--vw-unit) * 0.3);
 }
 
+#hourly-forecast {
+  --content-width: 100%;
+}
+
+/* horizontal bar chart, for hourly forecast data */
+
+/* NOTE:
+
+The following custom properties can be set (via the HTML `style` attribute, or via JS `setProperty(..)`) on the outer <ol> element, to configure rendering of the bar chart:
+
+  --cfg-bar-height: height (px, rem, etc) of each bar
+  --cfg-bar-scale-factor: scaling factor per unit of the --value specified value (per bar)
+  --cfg-min-value: minimum bar --value from the whole data set
+  --cfg-bar-rounding-scale: scale the bar end-rounding
+  --cfg-label-end-padding-scale: scale the padding between label and end of bar
+  --cfg-label-rounding-scale: scale the rounding on the bar-label
+  --cfg-label-internal-padding-scale: scale the padding around bar-label text
+  --cfg-row-gap-scale: scale the spacing between rows
+  --cfg-column-gap-scale: scale the column spacing between row label and bar
+  --cfg-label-font-scale: scale row-label and bar-label font-size
+  --cfg-label-font: CSS font-family for row-label and bar-label
+  --cfg-label-font-weight: CSS font-weight for row-label and bar-label
+  --cfg-row-label-color: CSS color (red, #f0f, etc) for the row-label
+  --cfg-row-label-text-color: CSS color (red, #f0f, etc) for the row-label text
+  --cfg-bar-color: CSS color (red, #f0f, etc) for the bar
+  --cfg-bar-label-color: CSS color (red, #f0f, etc) for the bar-label
+  --cfg-bar-label-text-color: CSS color (red, #f0f, etc) for the bar-label text
+
+And the following custom property is required on each <i> bar element:
+
+  --cfg-value: the value (integer, decimal -- no CSS unit!) to use for each bar's computed width
+*/
+
+/* chart container */
+.chart-container {
+  padding-top: calc(2.5 * var(--vh-unit));
+}
+.horz-bar-chart {
+  /* configuration variables (with applied defaults) */
+  --bar-height: var(--cfg-bar-height, 2rem);
+  --bar-scale-factor: var(--cfg-bar-scale-factor, 0.5rem);
+  --min-value: var(--cfg-min-value, 0);
+  --label-font-scale: var(--cfg-label-font-scale, 1);
+  --bar-rounding-scale: var(--cfg-bar-rounding-scale, 1);
+  --label-end-padding-scale: var(--cfg-label-end-padding-scale, 1);
+  --label-rounding-scale: var(--cfg-label-rounding-scale, 1);
+  --label-internal-padding-scale: var(--cfg-label-internal-padding-scale, 1);
+  --row-gap-scale: var(--cfg-row-gap-scale, 1);
+  --column-gap-scale: var(--cfg-column-gap-scale, 10);
+  --label-font: var(--cfg-label-font, sans-serif);
+  --label-font-weight: var(--cfg-label-font-weight, normal);
+  --row-label-color: var(--cfg-row-label-color, dimgray);
+  --row-label-text-color: var(--cfg-row-label-text-color, white);
+  --bar-color: var(--cfg-bar-color, orange);
+  --bar-label-color: var(--cfg-bar-label-color, brown);
+  --bar-label-text-color: var(--cfg-bar-label-text-color, white);
+
+  /* computed properties, used internally */
+  --label-font-size: calc(var(--bar-height) / 2.6 * var(--label-font-scale));
+  --bar-rounding: calc(var(--label-font-size) / 1.6 * var(--bar-rounding-scale));
+  --label-end-padding: calc(var(--label-font-size) / 2.5 * var(--label-end-padding-scale));
+  --label-rounding: calc(var(--label-font-size) / 1.6 * var(--label-rounding-scale));
+  --label-internal-padding: calc(var(--label-font-size) / 2.2 * var(--label-internal-padding-scale));
+  --row-gap: calc(var(--bar-height) / 4 * var(--row-gap-scale));
+  --column-gap: calc(1.5px * var(--column-gap-scale));
+  --left-space: max(
+    -1 * var(--bar-scale-factor) * min(0, var(--min-value)),
+         var(--bar-scale-factor) * min(0, var(--min-value))
+  );
+
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--label-font);
+  font-weight: var(--label-font-weight);
+  display: inline-grid;
+  grid-template-areas: "bar-label bar";
+  grid-template-columns: min-content 1fr;
+  grid-template-rows: none;
+  grid-auto-rows: var(--bar-height);
+  gap: var(--row-gap) var(--column-gap);
+}
+/* row container */
+.horz-bar-chart li {
+  grid-column: bar-label / bar;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-template-rows: subgrid;
+  align-items: center;
+}
+/* row label */
+.horz-bar-chart li::before {
+  content: attr(data-bar-label);
+  grid-area: bar-label;
+  justify-self: end;
+  white-space: nowrap;
+  font-size: var(--label-font-size);
+  color: var(--row-label-text-color);
+  background-color: var(--row-label-color);
+  line-height: calc(var(--label-font-size) + (2 * var(--label-internal-padding)));
+  padding: 0 var(--label-internal-padding);
+  border-radius: var(--label-rounding);
+  cursor: default;
+}
+/* bar container */
+.horz-bar-chart li i {
+  --value-abs: max(
+    -1 * var(--cfg-value),
+         var(--cfg-value)
+  );
+  --value-sign: calc(var(--cfg-value) / max(0.1,var(--value-abs)));
+  --bar-width: max(
+    1px,
+    var(--bar-scale-factor) * var(--value-abs)
+  );
+
+  grid-area: bar;
+  display: block;
+  position: relative;
+  height: 100%;
+}
+/* bar */
+.horz-bar-chart li i::before {
+  --bar-translate-x: min(
+    0px,
+    var(--value-sign) * var(--bar-width)
+  );
+  --bar-left-rounding: calc(
+    -1 * min(
+      0px,
+      var(--value-sign) * var(--bar-rounding)
+    )
+  );
+  --bar-right-rounding: max(
+    0px,
+    var(--value-sign) * var(--bar-rounding)
+  );
+
+  content: "";
+  display: block;
+  background-color: var(--bar-color);
+  width: var(--bar-width);
+  height: 100%;
+  margin-left: var(--left-space);
+  transform: translateX(var(--bar-translate-x));
+  border-radius:
+    var(--bar-left-rounding)
+    var(--bar-right-rounding)
+    var(--bar-right-rounding)
+    var(--bar-left-rounding);
+  cursor: help;
+}
+/* bar label */
+.horz-bar-chart li i::after {
+  --label-min-translate: min(
+    100000% * var(--value-sign),
+    0% + var(--label-end-padding)
+  );
+  --label-width-translate: min(
+    0%,
+    -100% * var(--value-sign)
+  );
+  --label-padding-translate: calc(
+    -1 * var(--value-sign) * var(--label-end-padding)
+  );
+
+  content: attr(data-value-label);
+  font-size: var(--label-font-size);
+  line-height: calc(var(--label-font-size) + (2 * var(--label-internal-padding)));
+  font-style: normal;
+  color: var(--bar-label-text-color);
+  background-color: var(--bar-label-color);
+  padding: 0 var(--label-internal-padding);
+  position: absolute;
+  left: var(--left-space);
+  top: 50%;
+  transform: translate(
+    max(
+      var(--label-min-translate),
+      (
+        (var(--value-sign) * var(--bar-width)) +
+        var(--label-width-translate) +
+        var(--label-padding-translate)
+      )
+    ),
+    -50%
+  );
+  border-radius: var(--label-rounding);
+  cursor: help;
+}
 
 /****************************************/
 
@@ -1020,6 +1203,10 @@ footer {
     --btn-size: calc(var(--base-font-size) * 1.1);
     --btn-icon-size: calc(var(--btn-size) * 0.4);
   }
+
+  #hourly-forecast {
+    --content-width: calc(var(--vw-unit) * 70);
+  }
 }
 
 @media (max-aspect-ratio: 4/3) {
@@ -1032,20 +1219,26 @@ footer {
 
     width: calc(var(--vw-unit) * 37);
   }
+
+  #hourly-forecast {
+    --content-width: calc(var(--vw-unit) * 78);
+  }
 }
 
 @media (max-aspect-ratio: 6/7) {
   #current-weather {
-    min-width: 17em;
+    min-width: 17rem;
     width: calc(var(--vw-unit) * 85);
   }
 
   #daily-forecast .forecast-day {
     --local-font-size: var(--base-font-size);
 
-    min-width: 17em;
+    min-width: 17rem;
     width: max-content;
   }
+
+  #hourly-forecast {
+    --content-width: 17rem;
+  }
 }
-
-

@@ -1,18 +1,4 @@
 import { useRef } from 'react'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend,
-  LineController,
-  BarController
-} from 'chart.js';
-import ChartDataLabels from 'chartjs-plugin-datalabels'
-import { Bar, Line } from 'react-chartjs-2';
 
 
 export default HourlyForecast
@@ -26,19 +12,6 @@ function HourlyForecast({
   setForecastDate,
   selectedTimeMode
 }) {
-  ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    PointElement,
-    LineElement,
-    Tooltip,
-    Legend,
-    LineController,
-    BarController,
-    ChartDataLabels
-  )
-
   const displayTimezone = (
     (
       hourlyForecast[0].date.time.local !=
@@ -51,23 +24,34 @@ function HourlyForecast({
       null
   )
   const timeLabels = hourlyForecast.map(
-    ({ date: { time }}) => formatTimeLabel(time[selectedTimeMode])
+    ({ date: { time } }) => formatTimeLabel(time[selectedTimeMode])
   )
   const temperatureData = hourlyForecast.map(
     ({ temp }) => parseInt(temp, 10)
   )
   const minTemperature = Math.min(...temperatureData)
   const maxTemperature = Math.max(...temperatureData)
+  const temperatureSpan = computeSpanByZero(
+    minTemperature,
+    maxTemperature
+  )
   const precipitationData = hourlyForecast.map(
     ({ precipitation }) => parseInt(precipitation, 10)
   )
+  const minPrecipitation = Math.min(...precipitationData)
   const maxPrecipitation = Math.max(...precipitationData)
+  const precipitationSpan = computeSpanByZero(
+    minPrecipitation,
+    maxPrecipitation
+  )
   const windData = hourlyForecast.map(
     ({ wind }) => parseInt(wind, 10)
   )
+  const minWindSpeed = Math.min(...windData)
   const maxWindSpeed = Math.max(...windData)
-  const parentWidth = (
-    document.querySelector('main').offsetWidth
+  const windSpeedSpan = computeSpanByZero(
+    minWindSpeed,
+    maxWindSpeed
   )
   const temperatureChartRef = useRef()
   const precipitationChartRef = useRef()
@@ -132,273 +116,145 @@ function HourlyForecast({
         </label>
       </div>
 
-      <div className="chartContainer temperature">
-        <Bar
+      <div className="chart-container temperature">
+        <ol
+          className="horz-bar-chart"
+          style={{
+            '--cfg-bar-scale-factor':
+              `calc((0.9 * var(--content-width)) / max(1, ${temperatureSpan}))`,
+            '--cfg-row-gap-scale': '3',
+            '--cfg-column-gap-scale': '5',
+            '--cfg-label-internal-padding-scale': '0.8',
+            '--cfg-bar-height': 'calc(4.5 * var(--vh-unit))',
+            '--cfg-label-font-scale': '1.2',
+            '--cfg-label-font-weight': 'bold',
+            '--cfg-row-label-color': 'rgba(0, 0, 0, 0)',
+            '--cfg-bar-color': 'yellow',
+            '--cfg-bar-label-color': 'rgba(50, 53, 47, 0.8)',
+            '--cfg-bar-label-text-color': 'yellow',
+            '--cfg-min-value': minTemperature
+          }}
           ref={temperatureChartRef}
-          datasetIdKey="id"
-          data={{
-            labels: timeLabels,
-            datasets: [
-              {
-                id: 1,
-                data: temperatureData,
-                backgroundColor: 'yellow',
-                borderWidth: 0,
-                barThickness: 25,
-                datalabels: {
-                  display: true,
-                  anchor(context) {
-                    return (
-                      context.dataset.data[context.dataIndex] < 0 ?
-                        'start' :
-                        'end'
-                    )
-                  },
-                  align(context) {
-                    return (
-                      context.dataset.data[context.dataIndex] <= 0 ?
-                        'right' :
-                        'left'
-                    )
-                  },
-                  color: 'yellow',
-                  backgroundColor: 'rgba(50, 53, 47, 0.8)',
-                  formatter(value) {
-                    return `${value}${hourlyForecast[0].tempUnit}`
-                  },
-                  labels: {
-                    title: {
-                      bold: true
-                    }
+        >
+          {
+            timeLabels.map((label, idx) => (
+              <li
+                aria-label={
+                  `${label}: ${temperatureData[idx]}${hourlyForecast[0].tempUnit}`
+                }
+                title={
+                  `${label}: ${temperatureData[idx]}${hourlyForecast[0].tempUnit}`
+                }
+                data-bar-label={label}
+                key={idx}
+              >
+                <i
+                  aria-hidden="hidden"
+                  data-value-label={
+                    `${temperatureData[idx]}${hourlyForecast[0].tempUnit}`
                   }
-                }
-              }
-            ]
-          }}
-          width={parentWidth}
-          height="950"
-          options={{
-            animation: false,
-            events: [],
-            layout: {
-              autoPadding: true
-            },
-            plugins: {
-              legend: {
-                display: false
-              },
-              tooltip: {
-                enabled: false
-              },
-              datalabels: {
-                clip: false,
-                borderRadius: 6,
-                labels: {
-                  title: {
-                    font: {
-                      weight: 'bold'
-                    }
-                  }
-                }
-              }
-            },
-            elements: {
-              bar: {
-                borderRadius: 10
-              }
-            },
-            indexAxis: 'y',
-            scales: {
-              x: {
-                display: false,
-                type: 'linear',
-                suggestedMin: minTemperature,
-                suggestedMax: maxTemperature
-              },
-              y: {
-                display: true,
-                grid: {
-                  drawOnChartArea: false
-                },
-                ticks: {
-                  color: 'white'
-                }
-              }
-            }
-          }}
-        />
+                  style={{
+                    '--cfg-value': temperatureData[idx]
+                  }}
+                ></i>
+              </li>
+            ))
+          }
+        </ol>
       </div>
 
-      <div className="chartContainer precipitation hidden">
-        <Bar
+      <div className="chart-container precipitation hidden">
+        <ol
+          className="horz-bar-chart"
+          style={{
+            '--cfg-bar-scale-factor':
+              `calc((0.9 * var(--content-width)) / max(1, ${precipitationSpan}))`,
+            '--cfg-row-gap-scale': '3',
+            '--cfg-column-gap-scale': '5',
+            '--cfg-label-internal-padding-scale': '0.8',
+            '--cfg-bar-height': 'calc(4.5 * var(--vh-unit))',
+            '--cfg-label-font-scale': '1.2',
+            '--cfg-label-font-weight': 'bold',
+            '--cfg-row-label-color': 'rgba(0, 0, 0, 0)',
+            '--cfg-bar-color': 'rgba(36, 135, 205)',
+            '--cfg-bar-label-color': 'white',
+            '--cfg-bar-label-text-color': 'rgba(36, 135, 205)',
+            '--cfg-min-value': minPrecipitation
+          }}
           ref={precipitationChartRef}
-          datasetIdKey="id"
-          data={{
-            labels: timeLabels,
-            datasets: [
-              {
-                id: 1,
-                data: precipitationData,
-                backgroundColor: 'rgba(36, 135, 205)',
-                borderWidth: 0,
-                barThickness: 25,
-                datalabels: {
-                  display: true,
-                  anchor: 'end',
-                  align(context) {
-                    return (
-                      context.dataset.data[context.dataIndex] > 5 ?
-                        'left' :
-                        'right'
-                    )
-                  },
-                  color: 'rgba(36, 135, 205)',
-                  backgroundColor: 'white',
-                  formatter(value) {
-                    return `${value}%`
+        >
+          {
+            timeLabels.map((label, idx) => (
+              <li
+                aria-label={
+                  `${label}: ${precipitationData[idx]}%`
+                }
+                title={
+                  `${label}: ${precipitationData[idx]}%`
+                }
+                data-bar-label={label}
+                key={idx}
+              >
+                <i
+                  aria-hidden="hidden"
+                  data-value-label={
+                    `${precipitationData[idx]}%`
                   }
-                }
-              }
-            ]
-          }}
-          width={parentWidth}
-          height="950"
-          options={{
-            animation: false,
-            events: [],
-            layout: {
-              autoPadding: true
-            },
-            plugins: {
-              legend: {
-                display: false
-              },
-              tooltip: {
-                enabled: false
-              },
-              datalabels: {
-                clip: false,
-                borderRadius: 6,
-                labels: {
-                  title: {
-                    font: {
-                      weight: 'bold'
-                    }
-                  }
-                }
-              }
-            },
-            elements: {
-              bar: {
-                borderRadius: 10
-              }
-            },
-            indexAxis: 'y',
-            scales: {
-              x: {
-                display: false,
-                type: 'linear',
-                suggestedMin: 0,
-                suggestedMax: maxPrecipitation
-              },
-              y: {
-                display: true,
-                grid: {
-                  drawOnChartArea: false
-                },
-                ticks: {
-                  color: 'white'
-                }
-              }
-            }
-          }}
-        />
+                  style={{
+                    '--cfg-value': precipitationData[idx]
+                  }}
+                ></i>
+              </li>
+            ))
+          }
+        </ol>
       </div>
 
-      <div className="chartContainer wind hidden">
-        <Bar
+      <div className="chart-container wind hidden">
+        <ol
+          className="horz-bar-chart"
+          style={{
+            '--cfg-bar-scale-factor':
+              `calc((0.9 * var(--content-width)) / max(1, ${windSpeedSpan}))`,
+            '--cfg-row-gap-scale': '3',
+            '--cfg-column-gap-scale': '5',
+            '--cfg-label-internal-padding-scale': '0.8',
+            '--cfg-bar-height': 'calc(4.5 * var(--vh-unit))',
+            '--cfg-label-font-scale': '1.2',
+            '--cfg-label-font-weight': 'bold',
+            '--cfg-row-label-color': 'rgba(0, 0, 0, 0)',
+            '--cfg-bar-color': 'rgba(150, 150, 150)',
+            '--cfg-bar-label-color': 'rgba(45, 45, 45, 0.7)',
+            '--cfg-bar-label-text-color': 'white',
+            '--cfg-min-value': minWindSpeed
+          }}
           ref={windChartRef}
-          datasetIdKey="id"
-          data={{
-            labels: timeLabels,
-            datasets: [
-              {
-                id: 1,
-                data: windData,
-                backgroundColor: 'rgba(150, 150, 150)',
-                borderWidth: 0,
-                barThickness: 25,
-                datalabels: {
-                  display: true,
-                  anchor: 'end',
-                  align(context) {
-                    return (
-                      context.dataset.data[context.dataIndex] > 1 ?
-                        'left' :
-                        'right'
-                    )
-                  },
-                  color: 'white',
-                  backgroundColor: 'rgba(45, 45, 45, 0.7)',
-                  formatter(value,context) {
-                    return hourlyForecast[context.dataIndex].wind
+        >
+          {
+            timeLabels.map((label, idx) => (
+              <li
+                aria-label={
+                  `${label}: ${hourlyForecast[idx].wind}`
+                }
+                title={
+                  `${label}: ${hourlyForecast[idx].wind}`
+                }
+                data-bar-label={label}
+                key={idx}
+              >
+                <i
+                  aria-hidden="hidden"
+                  data-value-label={
+                    hourlyForecast[idx].wind
                   }
-                }
-              }
-            ]
-          }}
-          width={parentWidth}
-          height="950"
-          options={{
-            animation: false,
-            events: [],
-            layout: {
-              autoPadding: true
-            },
-            plugins: {
-              legend: {
-                display: false
-              },
-              tooltip: {
-                enabled: false
-              },
-              datalabels: {
-                clip: false,
-                borderRadius: 6,
-                labels: {
-                  title: {
-                    font: {
-                      weight: 'bold'
-                    }
-                  }
-                }
-              }
-            },
-            elements: {
-              bar: {
-                borderRadius: 10
-              }
-            },
-            indexAxis: 'y',
-            scales: {
-              x: {
-                display: false,
-                type: 'linear',
-                suggestedMin: 0,
-                suggestedMax: maxWindSpeed
-              },
-              y: {
-                display: true,
-                grid: {
-                  drawOnChartArea: false
-                },
-                ticks: {
-                  color: 'white'
-                }
-              }
-            }
-          }}
-        />
+                  style={{
+                    '--cfg-value': windData[idx]
+                  }}
+                ></i>
+              </li>
+            ))
+          }
+        </ol>
       </div>
 
       <p>
@@ -416,6 +272,14 @@ function HourlyForecast({
 
   // *******************
 
+  function computeSpanByZero(minValue, maxValue) {
+    return Math.max(
+      Math.abs(minValue),
+      Math.abs(maxValue),
+      Math.abs(maxValue - minValue)
+    )
+  }
+
   function formatTimeLabel(value) {
     const { hour = '', ampm = '' } = (
       value.match(/^(?<hour>\d+):\d+\s*(?<ampm>\w+)/)?.groups || {}
@@ -426,9 +290,9 @@ function HourlyForecast({
   function doToggleChartShown(evt) {
     if (evt.target.matches('input[type=radio][name=showWhichChart]')) {
       const chartContainers = [
-        temperatureChartRef.current.canvas.closest('.chartContainer'),
-        precipitationChartRef.current.canvas.closest('.chartContainer'),
-        windChartRef.current.canvas.closest('.chartContainer')
+        temperatureChartRef.current.closest('.chart-container'),
+        precipitationChartRef.current.closest('.chart-container'),
+        windChartRef.current.closest('.chart-container')
       ]
 
       for (let container of chartContainers) {

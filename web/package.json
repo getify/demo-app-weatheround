@@ -11,16 +11,11 @@
     ]
   },
   "dependencies": {
-    "@kurkle/color": "~0.3.2",
     "@redwoodjs/forms": "6.3.2",
     "@redwoodjs/router": "6.3.2",
     "@redwoodjs/web": "6.3.2",
-    "@socketsupply/json-store": "~0.2.0",
-    "chart.js": "~4.4.0",
-    "chartjs-plugin-datalabels": "~2.2.0",
     "prop-types": "15.8.1",
     "react": "18.2.0",
-    "react-chartjs-2": "~5.2.0",
     "react-dom": "18.2.0"
   },
   "devDependencies": {
