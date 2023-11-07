@@ -996,6 +996,8 @@ footer {
 
 #hourly-forecast {
   --content-width: 100%;
+
+  min-width: var(--content-width)
 }
 
 /* horizontal bar chart, for hourly forecast data */
