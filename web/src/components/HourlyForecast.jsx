@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import HorzBarChart from 'src/components/HorzBarChart.jsx'
 
 
@@ -68,13 +68,21 @@ function HourlyForecast({
     {}
   )
 
+  // listen for custom-event fired when clicking home() link
+  useEffect(() => {
+    document.addEventListener('clear-home-state', clearForecastDate)
+    return () => {
+      document.removeEventListener('clear-home-state', clearForecastDate)
+    }
+  }, [])
+
   return (
     <div id="hourly-forecast">
       <p>
         <button
           type="button"
           className="icon-text-btn back"
-          onClick={() => setForecastDate(null)}
+          onClick={clearForecastDate}
         >
           back
         </button>
@@ -140,7 +148,7 @@ function HourlyForecast({
         <button
           type="button"
           className="icon-text-btn back"
-          onClick={() => setForecastDate(null)}
+          onClick={clearForecastDate}
         >
           back
         </button>
@@ -150,6 +158,10 @@ function HourlyForecast({
 
 
   // *******************
+
+  function clearForecastDate() {
+    setForecastDate(null)
+  }
 
   function formatTimeLabel(value) {
     const { hour = '', ampm = '' } = (

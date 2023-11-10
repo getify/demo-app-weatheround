@@ -1,5 +1,6 @@
 import { Link, routes } from '@redwoodjs/router'
 
+
 export default SiteLayout
 
 
@@ -10,8 +11,13 @@ function SiteLayout({ children }) {
     <>
       <div id="page">
         <header>
-          <h1>
-            <a href="/" aria-label="WeatheRound"><i>W</i>eathe<i>r</i>ound</a>
+          <h1 aria-label="WeatheRound">
+            <Link
+              to={routes.home()}
+              onClick={clearHomeState}
+            >
+              <i>W</i>eathe<i>r</i>ound
+            </Link>
           </h1>
         </header>
         <main>{children}</main>
@@ -19,13 +25,16 @@ function SiteLayout({ children }) {
           <hr />
           <hr />
 
-          &copy;2023
-          {' '}
-          Kyle Simpson
+          &copy;2023 Kyle Simpson
 
           {' '}|{' '}
 
-          <a href="/">Weather</a>
+          <Link
+            to={routes.home()}
+            onClick={clearHomeState}
+          >
+            Weather
+          </Link>
 
           {' '}|{' '}
 
@@ -43,4 +52,12 @@ function SiteLayout({ children }) {
       </div>
     </>
   )
+
+  // *******************
+
+  function clearHomeState() {
+    document.dispatchEvent(
+      new Event('clear-home-state')
+    )
+  }
 }
