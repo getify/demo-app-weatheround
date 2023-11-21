@@ -1,4 +1,5 @@
-import { useRef } from 'react'
+import { useRef, useContext } from 'react'
+import HomeContext from 'src/lib/home-context.js'
 import { cancelEvt } from 'src/lib/util.js'
 
 
@@ -8,14 +9,14 @@ export default Search
 // *******************
 
 function Search({
-    locFound,
     searchText,
     setSelectedLoc,
     setSearchText,
-    resetLocState,
-    setWeatherCanceled,
-    searchInputExternalRef
+    searchInputExternalRef,
+    clearLocState,
+    clearWeatherCanceled
 }) {
+  const { locFound } = useContext(HomeContext)
   const searchInputInternalRef = useRef()
 
   if (
@@ -65,8 +66,8 @@ function Search({
     if (searchInputInternalRef.current.value) {
       setSelectedLoc(null)
       setSearchText(searchInputInternalRef.current.value)
-      resetLocState()
-      setWeatherCanceled(false)
+      clearLocState(/*silent=*/false)
+      clearWeatherCanceled()
     }
   }
 }

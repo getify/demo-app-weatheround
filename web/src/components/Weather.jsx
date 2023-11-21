@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useContext } from 'react'
+import HomeContext from 'src/lib/home-context.js'
 import {
   useGetWeather,
   setDefaultWeatherUnits,
@@ -20,12 +21,15 @@ export default Weather
 // *******************
 
 function Weather({
-  loc,
-  locFound,
   activateWeather,
   cancelWeather,
   canceled = false
 }) {
+  const {
+    loc,
+    locFound
+  } = useContext(HomeContext)
+
   // note: `let`s here are intentional
   let [ temperatureUnit, setTemperatureUnit ] = useState(null)
   let [ speedUnit, setSpeedUnit ] = useState(null)
@@ -42,8 +46,7 @@ function Weather({
     setForecastDate(forecastDate = null)
   }
 
-  const [ weatherToken, updateWeatherToken ] =
-    useState(Math.random())
+  const [ weatherToken, updateWeatherToken ] = useState(Math.random())
   const [ weather ] = useGetWeather({
     loc,
     token: weatherToken,
@@ -179,7 +182,7 @@ function Weather({
 
   async function doToggleUnit(evt) {
     if (evt.target.matches('[name=pickTemperatureUnit]')) {
-      setForecastDate()
+      setForecastDate(forecastDate = null)
       activateWeather()
       await setDefaultWeatherUnits(
         evt.target.value,
@@ -189,7 +192,7 @@ function Weather({
       setTemperatureUnit(evt.target.value)
     }
     else if (evt.target.matches('[name=pickSpeedUnit]')) {
-      setForecastDate()
+      setForecastDate(forecastDate = null)
       activateWeather()
       await setDefaultWeatherUnits(
         temperatureUnit,
@@ -199,7 +202,7 @@ function Weather({
       setSpeedUnit(evt.target.value)
     }
     else if (evt.target.matches('[name=pickTimeMode]')) {
-      setForecastDate()
+      setForecastDate(forecastDate = null)
       activateWeather()
       storeSavedTimeMode(evt.target.value)
       updateTimeMode(evt.target.value)

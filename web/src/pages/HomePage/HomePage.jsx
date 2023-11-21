@@ -1,5 +1,6 @@
 import { Head } from '@redwoodjs/web'
 import { useState, useEffect, useRef } from 'react'
+import HomeContext from 'src/lib/home-context.js'
 import { useGetLocation, isLocationSaved } from 'src/hooks/useGetLocation.js'
 import Search from 'src/components/Search.jsx'
 import CurrentLocation from 'src/components/CurrentLocation.jsx'
@@ -26,9 +27,7 @@ function HomePage() {
   const [ selectedLoc, setSelectedLoc ] = useState(null)
   const searchInputRef = useRef()
 
-  // hack: quietly (no re-render) reset location
-  // state
-  locState.reset = locState.canceled = false
+  clearLocState(/*silent=*/true)
 
   return (
     <>
@@ -36,42 +35,49 @@ function HomePage() {
         <title>WeatheRound</title>
       </Head>
 
-      <Search
-        locFound={locFound}
-        searchText={searchText}
-        setSelectedLoc={setSelectedLoc}
-        setSearchText={setSearchText}
-        resetLocState={resetLocState}
-        setWeatherCanceled={setWeatherCanceled}
-        searchInputExternalRef={searchInputRef}
-      />
+      <HomeContext.Provider
+        value={{
+          loc: selectedLoc || loc,
+          locFound
+        }}
+      >
+        <Search
+          searchText={searchText}
+          setSearchText={setSearchText}
+          setSelectedLoc={setSelectedLoc}
+          searchInputExternalRef={searchInputRef}
+          clearLocState={clearLocState}
+          clearWeatherCanceled={doClearWeatherCanceled}
+        />
 
-      <CurrentLocation
-        loc={selectedLoc || loc}
-        activateLocation={doActivateLocation}
-        cancelLocation={doCancelLocation}
-        resetLocation={doResetLocation}
-        canceled={locCanceled}
-      />
+        <CurrentLocation
+          activateLocation={doActivateLocation}
+          cancelLocation={doCancelLocation}
+          resetLocation={doResetLocation}
+          canceled={locCanceled}
+        />
 
-      <Weather
-        loc={selectedLoc || loc}
-        locFound={locFound}
-        activateWeather={doActivateWeather}
-        cancelWeather={doCancelWeather}
-        canceled={weatherCanceled}
-      />
+        <Weather
+          activateWeather={doActivateWeather}
+          cancelWeather={doCancelWeather}
+          canceled={weatherCanceled}
+        />
+      </HomeContext.Provider>
     </>
   )
 
 
   // *******************
 
-  function resetLocState() {
-    setLocState({
-      reset: false,
-      canceled: false
-    })
+  function clearLocState(silent = false) {
+    locState.reset = locState.canceled = false
+
+    if (!silent) {
+      setLocState({
+        reset: false,
+        canceled: false
+      })
+    }
   }
 
   function setLocState({
@@ -87,7 +93,7 @@ function HomePage() {
   }
 
   function doActivateLocation(locToSelect) {
-    resetLocState()
+    clearLocState(/*silent=*/false)
     setSelectedLoc(locToSelect)
     setSearchText(null)
     setWeatherCanceled(false)
@@ -101,13 +107,17 @@ function HomePage() {
   }
 
   function doActivateWeather() {
-    resetLocState()
+    clearLocState(/*silent=*/false)
     setWeatherCanceled(false)
   }
 
   function doCancelWeather() {
-    resetLocState()
+    clearLocState(/*silent=*/false)
     setWeatherCanceled(true)
+  }
+
+  function doClearWeatherCanceled() {
+    setWeatherCanceled(false)
   }
 
   function doResetLocation() {

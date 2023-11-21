@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useContext } from 'react'
 import { cancelEvt } from 'src/lib/util.js'
+import HomeContext from 'src/lib/home-context.js'
 import {
   formatLocation,
   getLocationStatus,
@@ -17,17 +18,15 @@ export default CurrentLocation
 // *******************
 
 function CurrentLocation({
-  loc,
   activateLocation,
   cancelLocation,
   resetLocation,
   canceled = false
 }) {
+  const { loc } = useContext(HomeContext)
   const { pending, found } = getLocationStatus(loc)
   const [ savedLocs, updateSavedLocs ] = useState({})
-  const formattedLoc = (
-    found ? formatLocation(loc) : ''
-  )
+  const formattedLoc = found ? formatLocation(loc) : ''
   const hasSavedLocations = Object.values(savedLocs).length > 0
   const savedLocationsListRef = useRef()
   const toggleSavedLocationsBtnRef = useRef()
