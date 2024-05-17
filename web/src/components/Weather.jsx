@@ -137,6 +137,7 @@ function Weather({
                         (
                           <>
                             <CurrentWeather
+                              zipCode={loc.postcode}
                               currentWeather={weather.current}
                               setForecastDate={setForecastDate}
                               lastUpdate={weather.lastUpdate}

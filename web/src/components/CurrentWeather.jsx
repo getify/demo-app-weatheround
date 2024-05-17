@@ -8,6 +8,7 @@ export default CurrentWeather
 // *******************
 
 function CurrentWeather({
+  zipCode,
   lastUpdate,
   currentWeather: {
     isoDate,
@@ -129,13 +130,26 @@ function CurrentWeather({
           {sunset.time[selectedTimeMode]}
         </div>
       </div>
-      <button
-        type="button"
-        className="icon-text-btn hourly-forecast"
-        onClick={() => setForecastDate(isoDate)}
-      >
-        hourly forecast
-      </button>
+      <div className="current-weather-buttons">
+        <button
+          type="button"
+          className="icon-text-btn hourly-forecast"
+          onClick={() => setForecastDate(isoDate)}
+        >
+          hourly
+        </button>
+        {
+          !!zipCode ? (
+            <button
+              type="button"
+              className="icon-text-btn weather-radar"
+              onClick={openRadarRedirect}
+            >
+              radar
+            </button>
+          ) : null
+        }
+      </div>
     </div>
   )
 
@@ -150,6 +164,14 @@ function CurrentWeather({
   function unbindPopupEvents() {
     document.removeEventListener('click', eventOutsidePopup, true)
     document.removeEventListener('keydown', eventOutsidePopup, true)
+  }
+
+  function openRadarRedirect() {
+    window.open(
+      `https://www.accuweather.com/web-api/three-day-redirect?key=GEO_-97%2E639%2c35%2E580&postalCode=${zipCode}&target=cityRadar`,
+      "_blank",
+      "noopener,noreferrer"
+    )
   }
 
   function eventOutsidePopup(evt) {

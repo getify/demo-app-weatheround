@@ -342,6 +342,9 @@ button.icon-text-btn::before {
 button.icon-text-btn.hourly-forecast::before {
   background-image: url(/images/hourly-forecast.svg);
 }
+button.icon-text-btn.weather-radar::before {
+  background-image: url(/images/weather-radar.svg);
+}
 button.icon-text-btn.back::before {
   background-image: url(/images/arrow-circle-left.svg);
 }
@@ -846,11 +849,17 @@ footer {
 
   margin-right: calc(var(--vw-unit) * 0.5);
 }
-#current-weather button[type=button].icon-text-btn.hourly-forecast {
+#current-weather .current-weather-buttons {
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: calc(var(--base-font-size) * 2);
+}
+/*#current-weather .current-weather-buttons button[type=button].icon-text-btn {
   display: inline-block;
   margin: 0 auto;
 }
-
+*/
 #daily-forecast {
   display: flex;
   flex-wrap: wrap;
